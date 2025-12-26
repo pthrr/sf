@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From PLF Require Import Sub.
 
 Parameter MISSING: Type.
@@ -123,40 +123,76 @@ idtac " ".
 idtac "-------------------  sub_inversion_arrow  --------------------".
 idtac " ".
 
-idtac "#> sub_inversion_arrow".
+idtac "#> STLCSub.sub_inversion_arrow".
 idtac "Possible points: 3".
-check_type @sub_inversion_arrow (
-(forall U V1 V2 : ty,
- U <: Arrow V1 V2 ->
- exists U1 U2 : ty, U = Arrow U1 U2 /\ V1 <: U1 /\ U2 <: V2)).
+check_type @STLCSub.sub_inversion_arrow (
+(forall (U V1 V2 : STLCSub.ty)
+   (_ : STLCSub.subtype U (STLCSub.Ty_Arrow V1 V2)),
+ @ex STLCSub.ty
+   (fun U1 : STLCSub.ty =>
+    @ex STLCSub.ty
+      (fun U2 : STLCSub.ty =>
+       and (@eq STLCSub.ty U (STLCSub.Ty_Arrow U1 U2))
+         (and (STLCSub.subtype V1 U1) (STLCSub.subtype U2 V2)))))).
 idtac "Assumptions:".
 Abort.
-Print Assumptions sub_inversion_arrow.
+Print Assumptions STLCSub.sub_inversion_arrow.
 Goal True.
 idtac " ".
 
 idtac "-------------------  variations  --------------------".
 idtac " ".
 
-idtac "#> Manually graded: variations".
+idtac "#> Manually graded: STLCSub.variations".
 idtac "Possible points: 2".
-print_manual_grade manual_grade_for_variations.
+print_manual_grade STLCSub.manual_grade_for_variations.
 idtac " ".
 
 idtac "-------------------  products  --------------------".
 idtac " ".
 
-idtac "#> Manually graded: products".
-idtac "Possible points: 5".
-print_manual_grade manual_grade_for_products.
+idtac "#> Manually graded: STLCSub.products_value_step".
+idtac "Possible points: 2".
+print_manual_grade STLCSub.manual_grade_for_products_value_step.
+idtac " ".
+
+idtac "#> Manually graded: STLCSub.products_subtype_has_type".
+idtac "Possible points: 2".
+print_manual_grade STLCSub.manual_grade_for_products_subtype_has_type.
+idtac " ".
+
+idtac "#> Manually graded: STLCSub.products_progress".
+idtac "Possible points: 3".
+print_manual_grade STLCSub.manual_grade_for_products_progress.
+idtac " ".
+
+idtac "#> Manually graded: STLCSub.products_preservation".
+idtac "Possible points: 3".
+print_manual_grade STLCSub.manual_grade_for_products_preservation.
 idtac " ".
 
 idtac " ".
 
-idtac "Max points - standard: 30".
-idtac "Max points - advanced: 30".
+idtac "Max points - standard: 35".
+idtac "Max points - advanced: 35".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "CSeq_congruence".
+idtac "fold_constants_bexp_sound".
+idtac "succ_hastype_nat__hastype_nat".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
+idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
 idtac "".
 idtac "********** Standard **********".
 idtac "---------- arrow_sub_wrong ---------".
@@ -181,16 +217,22 @@ idtac "---------- smallest_2 ---------".
 idtac "MANUAL".
 idtac "---------- pair_permutation ---------".
 idtac "MANUAL".
-idtac "---------- sub_inversion_arrow ---------".
-Print Assumptions sub_inversion_arrow.
+idtac "---------- STLCSub.sub_inversion_arrow ---------".
+Print Assumptions STLCSub.sub_inversion_arrow.
 idtac "---------- variations ---------".
 idtac "MANUAL".
-idtac "---------- products ---------".
+idtac "---------- products_value_step ---------".
+idtac "MANUAL".
+idtac "---------- products_subtype_has_type ---------".
+idtac "MANUAL".
+idtac "---------- products_progress ---------".
+idtac "MANUAL".
+idtac "---------- products_preservation ---------".
 idtac "MANUAL".
 idtac "".
 idtac "********** Advanced **********".
 Abort.
 
-(* Fri Feb 8 06:33:01 EST 2019 *)
+(* 2025-08-24 14:29 *)
 
-(* Fri Feb 8 06:33:02 EST 2019 *)
+(* 2025-08-24 14:29 *)

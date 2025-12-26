@@ -1,4 +1,4 @@
-(** * Extraction: Extracting ML from Coq *)
+(** * Extraction: Extracting OCaml from Rocq *)
 
 (* ################################################################# *)
 (** * Basic Extraction *)
@@ -10,15 +10,17 @@
     OCaml (the most mature), Haskell (mostly works), and Scheme (a bit
     out of date). *)
 
-Require Coq.extraction.Extraction.
+From Stdlib Require Extraction.
+Set Extraction Output Directory ".".
 Extraction Language OCaml.
 
 (** Now we load up the Coq environment with some definitions, either
     directly or by importing them from other modules. *)
 
-From Coq Require Import Arith.Arith.
-From Coq Require Import Init.Nat.
-From Coq Require Import Arith.EqNat.
+Set Warnings "-notation-overridden,-notation-incompatible-prefix".
+From Stdlib Require Import Arith.
+From Stdlib Require Import Init.Nat.
+From Stdlib Require Import EqNat.
 From LF Require Import ImpCEvalFun.
 
 (** Finally, we tell Coq the name of a definition to extract and the
@@ -86,8 +88,8 @@ Extraction "imp2.ml" ceval_step.
     to set up the right correspondence between Coq strings and lists
     of OCaml characters. *)
 
-Require Import ExtrOcamlBasic.
-Require Import ExtrOcamlString.
+From Stdlib Require Import ExtrOcamlBasic.
+From Stdlib Require Import ExtrOcamlString.
 
 (** We also need one more variant of booleans. *)
 
@@ -129,4 +131,4 @@ Extraction "imp.ml" empty_st ceval_step parse.
     chapter in _Verified Functional Algorithms_ (_Software
     Foundations_ volume 3). *)
 
-(* Wed Jan 9 12:02:46 EST 2019 *)
+(* 2025-09-02 21:52 *)

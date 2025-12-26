@@ -44,12 +44,12 @@ Conjecture removeP : forall x l,  ~ (In x (remove x l)).
     running it on many randomly generated inputs, resulting in output
     like this:
 
-       0 
-       [0, 0] 
+       0
+       [0, 0]
        Failed! After 17 tests and 12 shrinks
 
-    This means that, if we run [remove] with [x] being [0] and [l] 
-    being the two-element list containing two zeros, then the property 
+    This means that, if we run [remove] with [x] being [0] and [l]
+    being the two-element list containing two zeros, then the property
     [removeP] fails. *)
 
 (** With this example in hand, we can see that the [then] branch
@@ -59,9 +59,10 @@ Conjecture removeP : forall x l,  ~ (In x (remove x l)).
     input and 12 "shrinks" to reduce it to a minimal
     counterexample. *)
 
-(** **** Exercise: 1 star (insertP)  *)
-(** Here is a somewhat mangled definition of a function for inserting a
-   new element into a sorted list of numbers: *)
+(** **** Exercise: 1 star, standard (insertP)
+
+    Here is a somewhat mangled definition of a function for inserting a
+    new element into a sorted list of numbers: *)
 
 Fixpoint insert x l :=
   match l with
@@ -73,18 +74,21 @@ Fixpoint insert x l :=
     always yields a list containing [x]."  Make sure QuickChick finds
     a counterexample. *)
 
-(* FILL IN HERE *)
-(** [] *)
+(* FILL IN HERE
 
-(** **** Exercise: 2 stars (insertP2)  *)
-(** Translate the following claim into a [Conjecture] (using [In] for
+    [] *)
+
+(** **** Exercise: 2 stars, standard (insertP2)
+
+    Translate the following claim into a [Conjecture] (using [In] for
     list membership): "For all numbers [x] and [y] and lists [l], if
     [y] is in [l] then it is also in the list that results from
     inserting [x] into [l]" (i.e., [insert] preserves all the elements
     already in [l]). Make sure QuickChick finds a counterexample. *)
 
-(* FILL IN HERE *)
-(** [] *)
+(* FILL IN HERE
+
+    [] *)
 
 (* ################################################################# *)
 (** * Overview *)
@@ -103,7 +107,7 @@ Fixpoint insert x l :=
     _typeclasses_, which QuickChick uses extensively both internally
     and in its programmatic interface to users.  This is the
     [Typeclasses] chapter.
-    
+
     In the [QC] chapter we'll cover the core concepts and
     features of QuickChick itself.
 
@@ -120,4 +124,4 @@ Fixpoint insert x l :=
     Finally, the [Postscript] chapter gives some suggestions for
     further reading. *)
 
-(* Tue Oct 9 11:47:30 EDT 2018 *)
+(* 2025-08-20 18:26 *)

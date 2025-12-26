@@ -29,14 +29,19 @@
     the refinement we need to make to the statement of the type
     preservation theorem. *)
 
-Set Warnings "-notation-overridden,-parsing".
-From Coq Require Import Strings.String.
-From Coq Require Import Arith.Arith.
-From Coq Require Import omega.Omega.
+Set Warnings "-notation-overridden,-parsing,-deprecated-hint-without-locality".
+Set Warnings "-deprecated-syntactic-definition".
+From Stdlib Require Import Strings.String.
+From Stdlib Require Import Init.Nat.
+From Stdlib Require Import Arith.
+From Stdlib Require Import PeanoNat.
+From Stdlib Require Import Lia.
 From PLF Require Import Maps.
 From PLF Require Import Smallstep.
-From Coq Require Import Lists.List.
-Import ListNotations.
+From Stdlib Require Import List. Import Datatypes.
+Check length.
+
+Import Nat.
 
 (* ################################################################# *)
 (** * Definitions *)
@@ -83,17 +88,21 @@ Module STLCRef.
     _dereferencing_, and _assignment_.
 
        - To allocate a reference, we use the [ref] operator, providing
-         an initial value for the new cell.  For example, [ref 5]
-         creates a new cell containing the value [5], and reduces to
-         a reference to that cell.
+         an initial value for the new cell.
+
+         For example, [ref 5] creates a new cell containing the value
+         [5], and reduces to a reference to that cell.
 
        - To read the current value of this cell, we use the
-         dereferencing operator [!]; for example, [!(ref 5)] reduces
-         to [5].
+         dereferencing operator [!].
+
+         For example, [!(ref 5)] reduces to [5].
 
        - To change the value stored in a cell, we use the assignment
-         operator.  If [r] is a reference, [r := 7] will store the
-         value [7] in the cell referenced by [r]. *)
+         operator.
+
+         If [r] is a reference, [r := 7] will store the value [7] in
+         the cell referenced by [r]. *)
 
 (* ----------------------------------------------------------------- *)
 (** *** Types *)
@@ -115,17 +124,17 @@ Module STLCRef.
 *)
 
 Inductive ty : Type :=
-  | Nat   : ty
-  | Unit  : ty
-  | Arrow : ty -> ty -> ty
-  | Ref   : ty -> ty.
+  | Ty_Nat   : ty
+  | Ty_Unit  : ty
+  | Ty_Arrow : ty -> ty -> ty
+  | Ty_Ref   : ty -> ty.
 
 (* ----------------------------------------------------------------- *)
 (** *** Terms *)
 
-(** Besides variables, abstractions, applications,
-    natural-number-related terms, and [unit], we need four more sorts
-    of terms in order to handle mutable references:
+(** Besides the usual variables, abstractions, applications,
+    terms related to natural numbers, and [unit], we need four
+    more sorts of terms in order to handle mutable references:
 
       t ::= ...              Terms
           | ref t              allocation
@@ -136,20 +145,74 @@ Inductive ty : Type :=
 
 Inductive tm  : Type :=
   (* STLC with numbers: *)
-  | var    : string -> tm
-  | app    : tm -> tm -> tm
-  | abs    : string -> ty -> tm -> tm
-  | const  : nat -> tm
-  | scc    : tm -> tm
-  | prd    : tm -> tm
-  | mlt    : tm -> tm -> tm
-  | test0  : tm -> tm -> tm -> tm
+  | tm_var    : string -> tm
+  | tm_app    : tm -> tm -> tm
+  | tm_abs    : string -> ty -> tm -> tm
+  | tm_const  : nat -> tm
+  | tm_succ    : tm -> tm
+  | tm_pred    : tm -> tm
+  | tm_mult    : tm -> tm -> tm
+  | tm_if0  : tm -> tm -> tm -> tm
   (* New terms: *)
-  | unit   : tm
-  | ref    : tm -> tm
-  | deref  : tm -> tm
-  | assign : tm -> tm -> tm
-  | loc    : nat -> tm.
+  | tm_unit   : tm
+  | tm_ref    : tm -> tm
+  | tm_deref  : tm -> tm
+  | tm_assign : tm -> tm -> tm
+  | tm_loc    : nat -> tm.
+
+Declare Custom Entry stlc_ty.
+Declare Custom Entry stlc_tm.
+Declare Scope stlc_scope.
+Notation "x" := x (in custom stlc_ty at level 0, x global) : stlc_scope.
+
+Notation "<{{ x }}>" := x (x custom stlc_ty).
+
+Notation "( t )" := t (in custom stlc_ty at level 0, t custom stlc_ty) : stlc_scope.
+Notation "S -> T" := (Ty_Arrow S T) (in custom stlc_ty at level 99, right associativity) : stlc_scope.
+
+Notation "$( t )" := t (in custom stlc_ty at level 0, t constr) : stlc_scope.
+
+Notation "$( x )" := x (in custom stlc_tm at level 0, x constr, only parsing) : stlc_scope.
+Notation "x" := x (in custom stlc_tm at level 0, x constr at level 0) : stlc_scope.
+Notation "<{ e }>" := e (e custom stlc_tm at level 200) : stlc_scope.
+Notation "( x )" := x (in custom stlc_tm at level 0, x custom stlc_tm) : stlc_scope.
+
+Notation "x y" := (tm_app x y) (in custom stlc_tm at level 10, left associativity) : stlc_scope.
+Notation "\ x : t , y" :=
+  (tm_abs x t y) (in custom stlc_tm at level 200, x global,
+                     t custom stlc_ty,
+                     y custom stlc_tm at level 200,
+                     left associativity).
+Coercion tm_var : string >-> tm.
+Arguments tm_var _%_string.
+
+Notation "'Nat'" := Ty_Nat (in custom stlc_ty at level 0).
+Notation "'succ' x" := (tm_succ x) (in custom stlc_tm at level 10,
+                                     x custom stlc_tm at level 0) : stlc_scope.
+Notation "'pred' x" := (tm_pred x) (in custom stlc_tm at level 10,
+                                     x custom stlc_tm at level 0) : stlc_scope.
+Notation "x * y" := (tm_mult x y) (in custom stlc_tm at level 95,
+                                      right associativity) : stlc_scope.
+Notation "'if0' x 'then' y 'else' z" :=
+  (tm_if0 x y z) (in custom stlc_tm at level 0,
+                    x custom stlc_tm at level 0,
+                    y custom stlc_tm at level 0,
+                    z custom stlc_tm at level 0) : stlc_scope.
+
+Coercion tm_const : nat >-> tm.
+
+Notation "'Unit'" :=
+  (Ty_Unit) (in custom stlc_ty at level 0) : stlc_scope.
+Notation "'unit'" := tm_unit (in custom stlc_tm at level 0) : stlc_scope.
+
+Notation "'Ref' t" :=
+  (Ty_Ref t) (in custom stlc_ty at level 4).
+Notation "'loc' x" := (tm_loc x) (in custom stlc_tm at level 2) : stlc_scope.
+Notation "'ref' x" := (tm_ref x) (in custom stlc_tm at level 2) : stlc_scope.
+Notation "'!' x " := (tm_deref x) (in custom stlc_tm at level 2) : stlc_scope.
+Notation " e1 ':=' e2 " := (tm_assign e1 e2) (in custom stlc_tm at level 21) : stlc_scope.
+
+Open Scope stlc_scope.
 
 (** Intuitively:
     - [ref t] (formally, [ref t]) allocates a new reference cell
@@ -177,18 +240,18 @@ Inductive tm  : Type :=
 (** Informally, the typing rules for allocation, dereferencing, and
     assignment will look like this:
 
-                           Gamma |- t1 : T1
-                       ------------------------                         (T_Ref)
-                       Gamma |- ref t1 : Ref T1
+                           Gamma |-- t1 \in T1
+                       ---------------------------                    (T_Ref)
+                       Gamma |-- ref t1 \in Ref T1
 
-                        Gamma |- t1 : Ref T11
-                        ---------------------                         (T_Deref)
-                          Gamma |- !t1 : T11
+                        Gamma |-- t1 \in Ref T1
+                        -----------------------                     (T_Deref)
+                          Gamma |-- !t1 \in T1
 
-                        Gamma |- t1 : Ref T11
-                          Gamma |- t2 : T11
-                       ------------------------                      (T_Assign)
-                       Gamma |- t1 := t2 : Unit
+                        Gamma |-- t1 \in Ref T2
+                          Gamma |-- t2 \in T2
+                       -------------------------                   (T_Assign)
+                       Gamma |-- t1 := t2 : Unit
 
     The rule for locations will require a bit more machinery, and this
     will motivate some changes to the other rules; we'll come back to
@@ -197,55 +260,63 @@ Inductive tm  : Type :=
 (* ----------------------------------------------------------------- *)
 (** *** Values and Substitution *)
 
-(** Besides abstractions and numbers, we have two new types of values:
-    the unit value, and locations.  *)
+(** Besides abstractions, numbers, and the unit value, we have one new
+    type of value: locations.  *)
 
 Inductive value : tm -> Prop :=
-  | v_abs  : forall x T t,
-      value (abs x T t)
-  | v_nat : forall n,
-      value (const n)
+  | v_abs : forall x T2 t1,
+      value <{\x:T2, t1}>
+  | v_nat : forall n : nat ,
+      value <{ n }>
   | v_unit :
-      value unit
+      value <{ unit }>
   | v_loc : forall l,
-      value (loc l).
+      value <{ loc l }>.
 
-Hint Constructors value.
+Hint Constructors value : core.
 
 (** Extending substitution to handle the new syntax of terms is
-    straightforward.  *)
+    straightforward: substituting in a pointer leaves it
+    unchanged.  *)
+Reserved Notation "'[' x ':=' s ']' t" (in custom stlc_tm at level 5, x global, s custom stlc_tm,
+      t custom stlc_tm at next level, right associativity).
 
-Fixpoint subst (x:string) (s:tm) (t:tm) : tm :=
+
+Fixpoint subst (x : string) (s : tm) (t : tm) : tm :=
   match t with
-  | var x'       =>
-      if eqb_string x x' then s else t
-  | app t1 t2    =>
-      app (subst x s t1) (subst x s t2)
-  | abs x' T t1  =>
-      if eqb_string x x' then t else abs x' T (subst x s t1)
-  | const n        =>
+  (* pure STLC *)
+  | tm_var y =>
+      if String.eqb x y then s else t
+  | <{\y:T, t1}> =>
+      if String.eqb x y then t else <{\y:T, [x:=s] t1}>
+  | <{t1 t2}> =>
+      <{([x:=s] t1) ([x:=s] t2)}>
+  (* numbers *)
+  | tm_const _ =>
       t
-  | scc t1      =>
-      scc (subst x s t1)
-  | prd t1      =>
-      prd (subst x s t1)
-  | mlt t1 t2   =>
-      mlt (subst x s t1) (subst x s t2)
-  | test0 t1 t2 t3 =>
-      test0 (subst x s t1) (subst x s t2) (subst x s t3)
-  | unit         =>
+  | <{succ t1}> =>
+      <{succ [x := s] t1}>
+  | <{pred t1}> =>
+      <{pred [x := s] t1}>
+  | <{t1 * t2}> =>
+      <{ ([x := s] t1) * ([x := s] t2)}>
+  | <{if0 t1 then t2 else t3}> =>
+      <{if0 [x := s] t1 then [x := s] t2 else [x := s] t3}>
+  (* unit *)
+  | <{ unit }> =>
+    <{ unit }>
+  (* references *)
+  | <{ ref t1 }> =>
+      <{ ref ([x:=s] t1) }>
+  | <{ !t1 }> =>
+      <{ !([x:=s] t1) }>
+  | <{ t1 := t2 }> =>
+    <{ ([x:=s] t1) := ([x:=s] t2) }>
+  | <{ loc _ }> =>
       t
-  | ref t1       =>
-      ref (subst x s t1)
-  | deref t1     =>
-      deref (subst x s t1)
-  | assign t1 t2 =>
-      assign (subst x s t1) (subst x s t2)
-  | loc _        =>
-      t
-  end.
+  end
 
-Notation "'[' x ':=' s ']' t" := (subst x s t) (at level 20).
+where "'[' x ':=' s ']' t" := (subst x s t) (in custom stlc_tm) : stlc_scope.
 
 (* ################################################################# *)
 (** * Pragmatics *)
@@ -261,7 +332,7 @@ Notation "'[' x ':=' s ']' t" := (subst x s t) (at level 20).
 
     as an abbreviation for
 
-       (\x:Unit. !r) (r:=succ(!r)).
+       (\x:Unit, !r) (r:=succ(!r)).
 
     This has the effect of reducing two expressions in order and
     returning the value of the second.  Restricting the type of the
@@ -275,12 +346,21 @@ Notation "'[' x ':=' s ']' t" := (subst x s t) (at level 20).
     assignments:
 
        r:=succ(!r); r:=succ(!r); r:=succ(!r); r:=succ(!r); !r
-
-    Formally, we introduce sequencing as a _derived form_
+*)
+(** Formally, we introduce sequencing as a _derived form_
     [tseq] that expands into an abstraction and an application. *)
 
+Definition x : string := "x".
+Definition y : string := "y".
+Definition z : string := "z".
+Hint Unfold x : core.
+Hint Unfold y : core.
+Hint Unfold z : core.
+
 Definition tseq t1 t2 :=
-  app (abs "x" Unit t2) t1.
+  <{ (\ x : Unit, t2)  t1 }>.
+
+Notation "t1 ; t2" := (tseq t1 t2) (in custom stlc_tm at level 3) : stlc_scope.
 
 (* ================================================================= *)
 (** ** References and Aliasing *)
@@ -302,9 +382,9 @@ Definition tseq t1 t2 :=
 
     the cell referenced by [r] will contain the value [82], while the
     result of the whole expression will be [83].  The references [r]
-    and [s] are said to be _aliases_ for the same cell.
+    and [s] are said to be _aliases_ for the same cell. *)
 
-    The possibility of aliasing can make programs with references
+(** The possibility of aliasing can make programs with references
     quite tricky to reason about.  For example, the expression
 
       r := 5; r := !s
@@ -316,7 +396,12 @@ Definition tseq t1 t2 :=
       r := !s
 
     _unless_ we happen to do it in a context where [r] and [s] are
-    aliases for the same cell! *)
+    aliases for the same cell!
+
+      let r = ref 0 in
+      let s = r in
+      r := 5; r := !s
+*)
 
 (* ================================================================= *)
 (** ** Shared State *)
@@ -328,8 +413,8 @@ Definition tseq t1 t2 :=
     two functions that manipulate its contents:
 
       let c = ref 0 in
-      let incc = \_:Unit. (c := succ (!c); !c) in
-      let decc = \_:Unit. (c := pred (!c); !c) in
+      let incc = \_:Unit, (c := succ (!c); !c) in
+      let decc = \_:Unit, (c := pred (!c); !c) in
       ...
 *)
 
@@ -359,10 +444,10 @@ Definition tseq t1 t2 :=
     record, and returns this record:
 
       newcounter =
-          \_:Unit.
+          \_:Unit,
              let c = ref 0 in
-             let incc = \_:Unit. (c := succ (!c); !c) in
-             let decc = \_:Unit. (c := pred (!c); !c) in
+             let incc = \_:Unit, (c := succ (!c); !c) in
+             let decc = \_:Unit, (c := pred (!c); !c) in
              {i=incc, d=decc}
 *)
 
@@ -380,13 +465,13 @@ Definition tseq t1 t2 :=
       r2  // yields 1, not 2!
 *)
 
-(** **** Exercise: 1 star, standard, optional (store_draw)  
+(** **** Exercise: 1 star, standard, optional (store_draw)
 
     Draw (on paper) the contents of the store at the point in
     execution where the first two [let]s have finished and the third
     one is about to begin. *)
 
-(* FILL IN HERE 
+(* FILL IN HERE
 
     [] *)
 
@@ -397,50 +482,55 @@ Definition tseq t1 t2 :=
     we've defined above allow us to create references to values of any
     type, including functions.  For example, we can use references to
     functions to give an (inefficient) implementation of arrays
-    of numbers, as follows.  Write [NatArray] for the type
-    [Ref (Nat->Nat)].
+    of numbers, as follows.
 
-    Recall the [equal] function from the [MoreStlc] chapter:
+    Write [NatArray] for the type [Ref (Nat->Nat)]. *)
+
+(** Recall the [equal] function from the [MoreStlc] chapter:
 
       equal =
         fix
-          (\eq:Nat->Nat->Bool.
-             \m:Nat. \n:Nat.
+          (\eq:Nat->Nat->Bool,
+             \m:Nat, \n:Nat,
                if m=0 then iszero n
                else if n=0 then false
                else eq (pred m) (pred n))
+*)
 
-    To build a new array, we allocate a reference cell and fill
+(** To build a new array, we allocate a reference cell and fill
     it with a function that, when given an index, always returns [0].
 
-      newarray = \_:Unit. ref (\n:Nat.0)
+      newarray = \_:Unit, ref (\n:Nat,0)
+*)
 
-    To look up an element of an array, we simply apply
+(** To look up an element of an array, we simply apply
     the function to the desired index.
 
-      lookup = \a:NatArray. \n:Nat. (!a) n
+      lookup = \a:NatArray, \n:Nat, (!a) n
+*)
 
-    The interesting part of the encoding is the [update] function.  It
+(** The interesting part of the encoding is the [update] function.  It
     takes an array, an index, and a new value to be stored at that index, and
     does its job by creating (and storing in the reference) a new function
     that, when it is asked for the value at this very index, returns the new
     value that was given to [update], while on all other indices it passes the
     lookup to the function that was previously stored in the reference.
 
-      update = \a:NatArray. \m:Nat. \v:Nat.
+      update = \a:NatArray, \m:Nat, \v:Nat,
                    let oldf = !a in
-                   a := (\n:Nat. if equal m n then v else oldf n);
+                   a := (\n:Nat, if equal m n then v else oldf n);
+*)
 
-    References to values containing other references can also be very
+(** References to values containing other references can also be very
     useful, allowing us to define data structures such as mutable
     lists and trees. *)
 
-(** **** Exercise: 2 stars, standard, recommended (compact_update)  
+(** **** Exercise: 2 stars, standard, especially useful (compact_update)
 
     If we defined [update] more compactly like this
 
-      update = \a:NatArray. \m:Nat. \v:Nat.
-                  a := (\n:Nat. if equal m n then v else (!a) n)
+      update = \a:NatArray, \m:Nat, \v:Nat,
+                  a := (\n:Nat, if equal m n then v else (!a) n)
 
 would it behave the same? *)
 
@@ -479,15 +569,15 @@ Definition manual_grade_for_compact_update : option (nat*string) := None.
 (* ================================================================= *)
 (** ** Garbage Collection *)
 
-(** A last issue that we should mention before we move on with
-    formalizing references is storage _de_-allocation.  We have not
-    provided any primitives for freeing reference cells when they are
-    no longer needed.  Instead, like many modern languages (including
-    ML and Java) we rely on the run-time system to perform _garbage
-    collection_, automatically identifying and reusing cells that can
-    no longer be reached by the program.
+(** A last issue that we should mention before we move on with formalizing
+    references is storage _de_-allocation.  We have not provided any
+    primitives for freeing reference cells when they are no longer needed.
+    Instead, like many modern languages (including OCaml, Haskell, Java,
+    etc.) we rely on the run-time system to perform _garbage collection_,
+    automatically identifying and reusing cells that can no longer be
+    reached by the program. *)
 
-    This is _not_ just a question of taste in language design: it is
+(** This is _not_ just a question of taste in language design: it is
     extremely difficult to achieve type safety in the presence of an
     explicit deallocation operation.  One reason for this is the
     familiar _dangling reference_ problem: we allocate a cell holding
@@ -497,7 +587,7 @@ Definition manual_grade_for_compact_update : option (nat*string) := None.
     names for the same storage cell -- one with type [Ref Nat] and the
     other with type [Ref Bool]. *)
 
-(** **** Exercise: 2 stars, standard (type_safety_violation)  
+(** **** Exercise: 2 stars, standard (type_safety_violation)
 
     Show how this can lead to a violation of type safety. *)
 
@@ -557,17 +647,17 @@ Definition manual_grade_for_type_safety_violation : option (nat*string) := None.
 (** ** Stores *)
 
 (** Recall that, in the small-step operational semantics for
-    IMP, the step relation needed to carry along an auxiliary state in
+    Imp, the step relation needed to carry along an auxiliary state in
     addition to the program being executed.  In the same way, once we
     have added reference cells to the STLC, our step relation must
     carry along a store to keep track of the contents of reference
     cells.
 
     We could re-use the same functional representation we used for
-    states in IMP, but for carrying out the proofs in this chapter it
+    states in Imp, but for carrying out the proofs in this chapter it
     is actually more convenient to represent a store simply as a
     _list_ of values.  (The reason we didn't use this representation
-    before is that, in IMP, a program could modify any location at any
+    before is that, in Imp, a program could modify any location at any
     time, so states had to be ready to map _any_ variable to a value.
     However, in the STLC with references, the only way to create a
     reference cell is with [ref t1], which puts the value of [t1]
@@ -581,11 +671,11 @@ Definition store := list tm.
 (** We use [store_lookup n st] to retrieve the value of the reference
     cell at location [n] in the store [st].  Note that we must give a
     default value to [nth] in case we try looking up an index which is
-    too large. (In fact, we will never actually do this, but proving
+    too large. (In fact, we will never actually do this, but _proving_
     that we don't will require a bit of work.) *)
 
 Definition store_lookup (n:nat) (st:store) :=
-  nth n st unit.
+  nth n st <{ unit }>.
 
 (** To update the store, we use the [replace] function, which replaces
     the contents of a cell at a particular index. *)
@@ -631,7 +721,7 @@ Proof with auto.
    inversion Hlen.
   - (* st = t' :: st' *)
     destruct l; simpl...
-    apply IHst'. simpl in Hlen. omega.
+    apply IHst'. simpl in Hlen. lia.
 Qed.
 
 Lemma lookup_replace_neq : forall l1 l2 t st,
@@ -655,6 +745,36 @@ Qed.
 (* ================================================================= *)
 (** ** Reduction *)
 
+(** Now we can give the rules for the new constructs:
+
+                   ------------------------------                  (ST_RefValue)
+                   ref v / st --> loc |st| / st,v
+
+                        t1 / st --> t1' / st'
+                    -----------------------------                    (ST_Ref)
+                    ref t1 / st --> ref t1' / st'
+
+                               l < |st|
+                     ----------------------------------            (ST_DerefLoc)
+                     !(loc l) / st --> lookup l st / st
+
+                        t1 / st --> t1' / st'
+                       -----------------------                       (ST_Deref)
+                       !t1 / st --> !t1' / st'
+
+                               l < |st|
+                ------------------------------------------         (ST_Assign)
+                loc l := v / st --> unit / replace l v st
+
+                        t1 / st --> t1' / st'
+                 -----------------------------------               (ST_Assign1)
+                 t1 := t2 / st --> t1' := t2 / st'
+
+                        t2 / st --> t2' / st'
+                 -----------------------------------               (ST_Assign2)
+                 v1 := t2 / st --> v1 := t2' / st'
+*)
+
 (** Next, we need to extend the operational semantics to take
     stores into account.  Since the result of reducing an expression
     will in general depend on the contents of the store in which it is
@@ -671,14 +791,14 @@ Qed.
     existing reduction rules with stores:
 
                                value v2
-                -------------------------------------- (ST_AppAbs)
-                (\x:T.t12) v2 / st --> [x:=v2]t12 / st
+                ------------------------------------- (ST_AppAbs)
+                (\x:T2,t1) v2 / st --> [x:=v2]t1 / st
 
                         t1 / st --> t1' / st'
                      --------------------------- (ST_App1)
                      t1 t2 / st --> t1' t2 / st'
 
-                  value v1 t2 / st --> t2' / st'
+                  value v1     t2 / st --> t2' / st'
                   ---------------------------------- (ST_App2)
                      v1 t2 / st --> v1 t2' / st'
 
@@ -705,7 +825,7 @@ Qed.
     reduce [t1] until it becomes a value:
 
                         t1 / st --> t1' / st'
-                       ----------------------- (ST_Deref)
+                       --------------------- (ST_Deref)
                        !t1 / st --> !t1' / st'
 
     Once [t1] has finished reducing, we should have an expression of
@@ -734,14 +854,14 @@ Qed.
                   v1 := t2 / st --> v1 := t2' / st'
 
     Once we have finished with [t1] and [t2], we have an expression of
-    the form [l:=v2], which we execute by updating the store to make
-    location [l] contain [v2]:
+    the form [l:=v], which we execute by updating the store to make
+    location [l] contain [v]:
 
                                l < |st|
-                ------------------------------------- (ST_Assign)
-                loc l := v2 / st --> unit / [l:=v2]st
+                -----------------------------------   (ST_Assign)
+                loc l := v / st --> unit / [l:=v]st
 
-    The notation [[l:=v2]st] means "the store that maps [l] to [v2]
+    The notation [[l:=v]st] means "the store that maps [l] to [v]
     and maps all other locations to the same thing as [st.]"  Note
     that the term resulting from this reduction step is just [unit];
     the interesting result is the updated store.
@@ -750,18 +870,18 @@ Qed.
     reduce [t1] until it becomes a value:
 
                         t1 / st --> t1' / st'
-                    ----------------------------- (ST_Ref)
+                    --------------------------- (ST_Ref)
                     ref t1 / st --> ref t1' / st'
 
     Then, to reduce the [ref] itself, we choose a fresh location at
     the end of the current store -- i.e., location [|st|] -- and yield
-    a new store that extends [st] with the new value [v1].
+    a new store that extends [st] with the new value [v].
 
                    -------------------------------- (ST_RefValue)
-                   ref v1 / st --> loc |st| / st,v1
+                   ref v / st --> loc |st| / st,v
 
     The value resulting from this step is the newly allocated location
-    itself.  (Formally, [st,v1] means [st ++ v1::nil] -- i.e., to add
+    itself.  (Formally, [st,v] means [st ++ v::nil] -- i.e., to add
     a new reference cell to the store, we append it to the end.)
 
     Note that these reduction rules do not perform any kind of
@@ -777,86 +897,87 @@ Qed.
 
     Here are the rules again, formally: *)
 
-Reserved Notation "t1 '/' st1 '-->' t2 '/' st2"
-  (at level 40, st1 at level 39, t2 at level 39).
-
-Import ListNotations.
+Reserved Notation "t '/' st '-->' t' '/' st'"
+  (at level 40, st at level 39, t' at level 39).
 
 Inductive step : tm * store -> tm * store -> Prop :=
-  | ST_AppAbs : forall x T t12 v2 st,
+  | ST_AppAbs : forall x T2 t1 v2 st,
          value v2 ->
-         app (abs x T t12) v2 / st --> [x:=v2]t12 / st
+         <{ (\x : T2, t1) v2 }> / st --> <{ [x := v2] t1 }> / st
   | ST_App1 : forall t1 t1' t2 st st',
          t1 / st --> t1' / st' ->
-         app t1 t2 / st --> app t1' t2 / st'
+         <{ t1 t2 }> / st --> <{ t1' t2 }> / st'
   | ST_App2 : forall v1 t2 t2' st st',
          value v1 ->
          t2 / st --> t2' / st' ->
-         app v1 t2 / st --> app v1 t2'/ st'
-  | ST_SuccNat : forall n st,
-         scc (const n) / st --> const (S n) / st
+         <{ v1 t2 }> / st --> <{ v1 t2' }> / st'
+  (* numbers *)
+  | ST_SuccNat : forall (n : nat) st,
+         <{ succ n }> / st --> tm_const (S n) / st
   | ST_Succ : forall t1 t1' st st',
          t1 / st --> t1' / st' ->
-         scc t1 / st --> scc t1' / st'
-  | ST_PredNat : forall n st,
-         prd (const n) / st --> const (pred n) / st
+         <{ succ t1 }> / st --> <{ succ t1' }> / st'
+  | ST_PredNat : forall (n : nat) st,
+         <{ pred n }> / st --> tm_const (n - 1) / st
   | ST_Pred : forall t1 t1' st st',
          t1 / st --> t1' / st' ->
-         prd t1 / st --> prd t1' / st'
-  | ST_MultNats : forall n1 n2 st,
-         mlt (const n1) (const n2) / st --> const (mult n1 n2) / st
+         <{ pred t1 }> / st --> <{ pred t1' }> / st'
+  | ST_MultNats : forall (n1 n2 : nat) st,
+      <{ n1 * n2 }> / st -->  tm_const (n1 * n2) / st
   | ST_Mult1 : forall t1 t2 t1' st st',
          t1 / st --> t1' / st' ->
-         mlt t1 t2 / st --> mlt t1' t2 / st'
+         <{ t1 * t2 }> / st --> <{ t1' * t2 }> / st'
   | ST_Mult2 : forall v1 t2 t2' st st',
          value v1 ->
          t2 / st --> t2' / st' ->
-         mlt v1 t2 / st --> mlt v1 t2' / st'
+         <{ v1 * t2 }> / st --> <{ v1 * t2' }> / st'
   | ST_If0 : forall t1 t1' t2 t3 st st',
          t1 / st --> t1' / st' ->
-         test0 t1 t2 t3 / st --> test0 t1' t2 t3 / st'
+         <{ if0 t1 then t2 else t3 }> / st --> <{ if0 t1' then t2 else t3 }> / st'
   | ST_If0_Zero : forall t2 t3 st,
-         test0 (const 0) t2 t3 / st --> t2 / st
+         <{ if0 0 then t2 else t3 }> / st --> t2 / st
   | ST_If0_Nonzero : forall n t2 t3 st,
-         test0 (const (S n)) t2 t3 / st --> t3 / st
-  | ST_RefValue : forall v1 st,
-         value v1 ->
-         ref v1 / st --> loc (length st) / (st ++ v1::nil)
+         <{ if0 $(S n) then t2 else t3 }> / st --> t3 / st
+  (* references *)
+  | ST_RefValue : forall v st,
+         value v ->
+         <{ ref v }> / st --> <{ loc $(length st) }> / (st ++ v::nil)
   | ST_Ref : forall t1 t1' st st',
          t1 / st --> t1' / st' ->
-         ref t1 /  st --> ref t1' /  st'
+         <{ ref t1 }> /  st --> <{ ref t1' }> /  st'
   | ST_DerefLoc : forall st l,
          l < length st ->
-         deref (loc l) / st --> store_lookup l st / st
+         <{ !(loc l) }> / st --> <{ $(store_lookup l st) }> / st
   | ST_Deref : forall t1 t1' st st',
          t1 / st --> t1' / st' ->
-         deref t1 / st --> deref t1' / st'
-  | ST_Assign : forall v2 l st,
-         value v2 ->
+         <{ ! t1 }> / st --> <{ ! t1' }> / st'
+  | ST_Assign : forall v l st,
+         value v ->
          l < length st ->
-         assign (loc l) v2 / st --> unit / replace l v2 st
+         <{ (loc l) := v }> / st --> <{ unit }> / replace l v st
   | ST_Assign1 : forall t1 t1' t2 st st',
          t1 / st --> t1' / st' ->
-         assign t1 t2 / st --> assign t1' t2 / st'
+         <{ t1 := t2 }> / st --> <{ t1' := t2 }> / st'
   | ST_Assign2 : forall v1 t2 t2' st st',
          value v1 ->
          t2 / st --> t2' / st' ->
-         assign v1 t2 / st --> assign v1 t2' / st'
+         <{ v1 := t2 }> / st --> <{ v1 := t2' }> / st'
 
-where "t1 '/' st1 '-->' t2 '/' st2" := (step (t1,st1) (t2,st2)).
+where "t '/' st '-->' t' '/' st'" := (step (t,st) (t',st')).
 
-(** One slightly ugly point should be noted here: In the [ST_RefValue]
-    rule, we extend the state by writing [st ++ v1::nil] rather than
-    the more natural [st ++ [v1]].  The reason for this is that the
-    notation we've defined for substitution uses square brackets,
-    which clash with the standard library's notation for lists. *)
+(** One slightly ugly point should be noted here: In the
+    [ST_RefValue] rule, we extend the state by writing [st ++ v::nil]
+    rather than the more natural [st ++ [v]].  The reason for this is
+    that the notation we've defined for substitution uses square
+    brackets, which clash with the standard library's notation for
+    lists. *)
 
-Hint Constructors step.
+Hint Constructors step : core.
 
 Definition multistep := (multi step).
-Notation "t1 '/' st '-->*' t2 '/' st'" :=
-               (multistep (t1,st) (t2,st'))
-               (at level 40, st at level 39, t2 at level 39).
+Notation "t '/' st '-->*' t' '/' st'" :=
+               (multistep (t,st) (t',st'))
+               (at level 40, st at level 39, t' at level 39).
 
 (* ################################################################# *)
 (** * Typing *)
@@ -872,8 +993,10 @@ Definition context := partial_map ty.
 (** Having extended our syntax and reduction rules to accommodate
     references, our last job is to write down typing rules for the new
     constructs (and, of course, to check that these rules are sound!).
-    Naturally, the key question is, "What is the type of a location?"
+Naturally, the key question is, "What is the type of a location?"
+*)
 
+(**
     First of all, notice that this question doesn't arise when
     typechecking terms that programmers actually
     write.  Concrete location constants arise only in terms that are
@@ -889,16 +1012,17 @@ Definition context := partial_map ty.
     concrete locations, the type of the result depends on the contents
     of the store that we start with.  For example, if we reduce the
     term [!(loc 1)] in the store [[unit, unit]], the result is [unit];
-    if we reduce the same term in the store [[unit, \x:Unit.x]], the
-    result is [\x:Unit.x].  With respect to the former store, the
+    if we reduce the same term in the store [[unit, \x:Unit,x]], the
+    result is [\x:Unit,x].  With respect to the former store, the
     location [1] has type [Unit], and with respect to the latter it
     has type [Unit->Unit]. This observation leads us immediately to a
     first attempt at a typing rule for locations:
 
-                             Gamma |- lookup  l st : T1
-                            ----------------------------
-                             Gamma |- loc l : Ref T1
-
+                             Gamma |-- lookup  l st : T1
+                             ---------------------------
+                             Gamma |-- loc l : Ref T1
+*)
+(**
     That is, to find the type of a location [l], we look up the
     current contents of [l] in the store and calculate the type [T1]
     of the contents.  The type of the location is then [Ref T1].
@@ -910,13 +1034,14 @@ Definition context := partial_map ty.
     (between contexts, _stores_, terms, and types).  Since the store is,
     intuitively, part of the context in which we calculate the type of a
     term, let's write this four-place relation with the store to the left
-    of the turnstile: [Gamma; st |- t : T].  Our rule for typing
+    of the turnstile: [Gamma; st |-- t : T].  Our rule for typing
     references now has the form
 
-                     Gamma; st |- lookup l st : T1
-                   --------------------------------
-                     Gamma; st |- loc l : Ref T1
-
+                     Gamma; st |-- lookup l st : T1
+                     ------------------------------
+                      Gamma; st |-- loc l : Ref T1
+*)
+(**
     and all the rest of the typing rules in the system are extended
     similarly with stores.  (The other rules do not need to do anything
     interesting with their stores -- just pass them from premise to
@@ -930,20 +1055,23 @@ Definition context := partial_map ty.
     [t].  Worse, if [v] itself contains locations, then we will have to
     recalculate _their_ types each time they appear.  Worse yet, the
     proposed typing rule for locations may not allow us to derive
-    anything at all, if the store contains a _cycle_.  For example,
+    anything at all if the store contains a _cycle_.  For example,
     there is no finite typing derivation for the location [0] with respect
     to this store:
 
-   [\x:Nat. (!(loc 1)) x, \x:Nat. (!(loc 0)) x]
+   [\x:Nat, (!(loc 1)) x, \x:Nat, (!(loc 0)) x]
 *)
-
-(** **** Exercise: 2 stars, standard (cyclic_store)  
+(** **** Exercise: 3 stars, standard (cyclic_store)
 
     Can you find a term whose reduction will create this particular
     cyclic store? *)
 
-(* Do not modify the following line: *)
-Definition manual_grade_for_cyclic_store : option (nat*string) := None.
+Theorem cyclic_store:
+  exists t,
+    t / nil -->*
+    <{ unit }> / (<{ \x:Nat, (!(loc 1)) x }> :: <{ \x:Nat, (!(loc 0)) x }> :: nil).
+Proof.
+  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** These problems arise from the fact that our proposed
@@ -976,7 +1104,7 @@ Definition store_ty := list ty.
     index. *)
 
 Definition store_Tlookup (n:nat) (ST:store_ty) :=
-  nth n ST Unit.
+  nth n ST <{{ Unit }}>.
 
 (** Suppose we are given a store typing [ST] describing the store
     [st] in which some term [t] will be reduced.  Then we can use
@@ -987,9 +1115,10 @@ Definition store_Tlookup (n:nat) (ST:store_ty) :=
     can be reformulated in terms of store typings like this:
 
                                  l < |ST|
-                   -------------------------------------
-                   Gamma; ST |- loc l : Ref (lookup l ST)
-
+                   ----------------------------------------------
+                   Gamma; ST |-- loc l : Ref (store_Tlookup l ST)
+*)
+(**
     That is, as long as [l] is a valid location, we can compute the
     type of [l] just by looking it up in [ST].  Typing is again a
     four-place relation, but it is parameterized on a store _typing_
@@ -1006,79 +1135,88 @@ Definition store_Tlookup (n:nat) (ST:store_ty) :=
 (**
 
                                l < |ST|
-                  --------------------------------------              (T_Loc)
-                  Gamma; ST |- loc l : Ref (lookup l ST)
+                  ----------------------------------------------        (T_Loc)
+                  Gamma; ST |-- loc l : Ref (store_Tlookup l ST)
 
-                         Gamma; ST |- t1 : T1
-                     ----------------------------                     (T_Ref)
-                     Gamma; ST |- ref t1 : Ref T1
+                         Gamma; ST |-- t1 : T1
+                     -----------------------------                      (T_Ref)
+                     Gamma; ST |-- ref t1 : Ref T1
 
-                      Gamma; ST |- t1 : Ref T11
+                      Gamma; ST |-- t1 : Ref T1
                       -------------------------                       (T_Deref)
-                        Gamma; ST |- !t1 : T11
+                        Gamma; ST |-- !t1 : T1
 
-                      Gamma; ST |- t1 : Ref T11
-                        Gamma; ST |- t2 : T11
+                      Gamma; ST |-- t1 : Ref T2
+                        Gamma; ST |-- t2 : T2
                     -----------------------------                    (T_Assign)
-                    Gamma; ST |- t1 := t2 : Unit
+                    Gamma; ST |-- t1 := t2 : Unit
 *)
 
-Reserved Notation "Gamma ';' ST '|-' t '\in' T" (at level 40).
+Notation "x '|->' v ';' m " := (update m x v)
+  (in custom stlc_tm at level 0, x constr at level 0, v  custom stlc_ty, right associativity) : stlc_scope.
 
-Inductive has_type : context -> store_ty -> tm -> ty -> Prop :=
-  | T_Var : forall Gamma ST x T,
-      Gamma x = Some T ->
-      Gamma; ST |- (var x) \in T
-  | T_Abs : forall Gamma ST x T11 T12 t12,
-      (update Gamma x T11); ST |- t12 \in T12 ->
-      Gamma; ST |- (abs x T11 t12) \in (Arrow T11 T12)
-  | T_App : forall T1 T2 Gamma ST t1 t2,
-      Gamma; ST |- t1 \in (Arrow T1 T2) ->
-      Gamma; ST |- t2 \in T1 ->
-      Gamma; ST |- (app t1 t2) \in T2
-  | T_Nat : forall Gamma ST n,
-      Gamma; ST |- (const n) \in Nat
-  | T_Succ : forall Gamma ST t1,
-      Gamma; ST |- t1 \in Nat ->
-      Gamma; ST |- (scc t1) \in Nat
-  | T_Pred : forall Gamma ST t1,
-      Gamma; ST |- t1 \in Nat ->
-      Gamma; ST |- (prd t1) \in Nat
-  | T_Mult : forall Gamma ST t1 t2,
-      Gamma; ST |- t1 \in Nat ->
-      Gamma; ST |- t2 \in Nat ->
-      Gamma; ST |- (mlt t1 t2) \in Nat
-  | T_If0 : forall Gamma ST t1 t2 t3 T,
-      Gamma; ST |- t1 \in Nat ->
-      Gamma; ST |- t2 \in T ->
-      Gamma; ST |- t3 \in T ->
-      Gamma; ST |- (test0 t1 t2 t3) \in T
-  | T_Unit : forall Gamma ST,
-      Gamma; ST |- unit \in Unit
-  | T_Loc : forall Gamma ST l,
+Notation "x '|->' v " := (update empty x v)
+  (in custom stlc_tm at level 0, x constr at level 0, v custom stlc_ty) : stlc_scope.
+
+Notation "'empty'" := empty (in custom stlc_tm) : stlc_scope.
+
+Reserved Notation "<{ Gamma '/' ST '|--' t '\in' T }>"
+            (at level 0, Gamma custom stlc_tm at level 200, t custom stlc_tm, T custom stlc_ty).
+
+Inductive has_type (ST : store_ty) : context -> tm -> ty -> Prop :=
+  | T_Var : forall Gamma x T1,
+      Gamma x = Some T1 ->
+      <{ Gamma / ST |-- x \in T1 }>
+  | T_Abs : forall Gamma x T1 T2 t1,
+      <{ x |-> T2; Gamma  / ST |-- t1 \in T1 }> ->
+      <{ Gamma / ST |-- \x:T2, t1 \in T2 -> T1 }>
+  | T_App : forall T1 T2 Gamma t1 t2,
+      <{ Gamma / ST |-- t1 \in T2 -> T1 }> ->
+      <{ Gamma / ST |-- t2 \in T2 }> ->
+      <{ Gamma / ST |-- t1 t2 \in T1 }>
+  | T_Nat : forall Gamma (n : nat),
+      <{ Gamma / ST |-- n \in Nat }>
+  | T_Succ : forall Gamma t1,
+      <{ Gamma / ST |-- t1 \in Nat }> ->
+      <{ Gamma / ST |-- succ t1 \in Nat }>
+  | T_Pred : forall Gamma t1,
+      <{ Gamma / ST |-- t1 \in Nat }> ->
+      <{ Gamma / ST |-- pred t1 \in Nat }>
+  | T_Mult : forall Gamma t1 t2,
+      <{ Gamma / ST |-- t1 \in Nat }> ->
+      <{ Gamma / ST |-- t2 \in Nat }> ->
+      <{ Gamma / ST |-- t1 * t2 \in Nat }>
+  | T_If0 : forall Gamma t1 t2 t3 T0,
+      <{ Gamma / ST |-- t1 \in Nat }> ->
+      <{ Gamma / ST |-- t2 \in T0 }> ->
+      <{ Gamma / ST |-- t3 \in T0 }> ->
+      <{ Gamma / ST |-- if0 t1 then t2 else t3 \in T0 }>
+  | T_Unit : forall Gamma,
+      <{ Gamma / ST |-- unit \in Unit }>
+  | T_Loc : forall Gamma l,
       l < length ST ->
-      Gamma; ST |- (loc l) \in (Ref (store_Tlookup l ST))
-  | T_Ref : forall Gamma ST t1 T1,
-      Gamma; ST |- t1 \in T1 ->
-      Gamma; ST |- (ref t1) \in (Ref T1)
-  | T_Deref : forall Gamma ST t1 T11,
-      Gamma; ST |- t1 \in (Ref T11) ->
-      Gamma; ST |- (deref t1) \in T11
-  | T_Assign : forall Gamma ST t1 t2 T11,
-      Gamma; ST |- t1 \in (Ref T11) ->
-      Gamma; ST |- t2 \in T11 ->
-      Gamma; ST |- (assign t1 t2) \in Unit
+      <{ Gamma / ST |-- (loc l) \in Ref $(store_Tlookup l ST) }>
+  | T_Ref : forall Gamma t1 T1,
+      <{ Gamma / ST |-- t1 \in T1 }> ->
+      <{ Gamma / ST |-- (ref t1) \in Ref T1 }>
+  | T_Deref : forall Gamma t1 T1,
+      <{ Gamma / ST |-- t1 \in Ref T1 }> ->
+      <{ Gamma / ST |-- (! t1) \in T1 }>
+  | T_Assign : forall Gamma t1 t2 T2,
+      <{ Gamma / ST |-- t1 \in Ref T2 }> ->
+      <{ Gamma / ST |-- t2 \in T2 }> ->
+      <{ Gamma / ST |-- (t1 := t2) \in Unit }>
 
-where "Gamma ';' ST '|-' t '\in' T" := (has_type Gamma ST t T).
+where "<{ Gamma '/' ST '|--' t '\in' T }>" := (has_type ST Gamma t T).
 
-Hint Constructors has_type.
+Hint Constructors has_type : core.
 
 (** Of course, these typing rules will accurately predict the results
     of reduction only if the concrete store used during reduction
     actually conforms to the store typing that we assume for purposes
     of typechecking.  This proviso exactly parallels the situation
     with free variables in the basic STLC: the substitution lemma
-    promises that, if [Gamma |- t : T], then we can replace the free
+    promises that, if [Gamma |-- t : T], then we can replace the free
     variables in [t] with values of the types listed in [Gamma] to
     obtain a closed term of type [T], which, by the type preservation
     theorem will reduce to a final result of type [T] if it yields
@@ -1119,9 +1257,9 @@ Hint Constructors has_type.
     related -- i.e., this is wrong: *)
 
 Theorem preservation_wrong1 : forall ST T t st t' st',
-  empty; ST |- t \in T ->
+  <{ empty / ST |-- t \in T }> ->
   t / st --> t' / st' ->
-  empty; ST |- t' \in T.
+  <{ empty / ST |-- t' \in T }>.
 Abort.
 
 (** If we typecheck with respect to some set of assumptions about the
@@ -1134,12 +1272,13 @@ Abort.
     context. The following definition of [store_well_typed] formalizes
     this.  *)
 
+
 Definition store_well_typed (ST:store_ty) (st:store) :=
   length ST = length st /\
   (forall l, l < length st ->
-     empty; ST |- (store_lookup l st) \in (store_Tlookup l ST)).
+     <{ empty / ST |-- $(store_lookup l st) \in $(store_Tlookup l ST) }>).
 
-(** Informally, we will write [ST |- st] for [store_well_typed ST st]. *)
+(** Informally, we will write [ST |-- st] for [store_well_typed ST st]. *)
 
 (** Intuitively, a store [st] is consistent with a store typing
     [ST] if every value in the store has the type predicted by the
@@ -1148,26 +1287,31 @@ Definition store_well_typed (ST:store_ty) (st:store) :=
     typing to the typing relation.  This allows us to type circular
     stores like the one we saw above. *)
 
-(** **** Exercise: 2 stars, standard (store_not_unique)  
+(** **** Exercise: 3 stars, standard (store_not_unique)
 
     Can you find a store [st], and two
     different store typings [ST1] and [ST2] such that both
-    [ST1 |- st] and [ST2 |- st]? *)
+    [ST1 |-- st] and [ST2 |-- st]? *)
 
 (* FILL IN HERE *)
 
-(* Do not modify the following line: *)
-Definition manual_grade_for_store_not_unique : option (nat*string) := None.
+Theorem store_not_unique:
+  exists st, exists ST1, exists ST2,
+    store_well_typed ST1 st /\
+    store_well_typed ST2 st /\
+    ST1 <> ST2.
+Proof.
+  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** We can now state something closer to the desired preservation
     property: *)
 
 Theorem preservation_wrong2 : forall ST T t st t' st',
-  empty; ST |- t \in T ->
+  <{ empty / ST |-- t \in T }> ->
   t / st --> t' / st' ->
   store_well_typed ST st ->
-  empty; ST |- t' \in T.
+  <{ empty / ST |-- t' \in T }>.
 Abort.
 
 (** This statement is fine for all of the reduction rules except
@@ -1194,7 +1338,7 @@ Inductive extends : store_ty -> store_ty -> Prop :=
       extends ST' ST ->
       extends (x::ST') (x::ST).
 
-Hint Constructors extends.
+Hint Constructors extends : core.
 
 (** We'll need a few technical lemmas about extended contexts.
 
@@ -1206,9 +1350,9 @@ Lemma extends_lookup : forall l ST ST',
   extends ST' ST ->
   store_Tlookup l ST' = store_Tlookup l ST.
 Proof with auto.
-  intros l ST ST' Hlen H.
-  generalize dependent ST'. generalize dependent l.
-  induction ST as [|a ST2]; intros l Hlen ST' HST'.
+  intros l ST.
+  generalize dependent l.
+  induction ST as [|a ST2]; intros l ST' Hlen HST'.
   - (* nil *) inversion Hlen.
   - (* cons *) unfold store_Tlookup in *.
     destruct ST'.
@@ -1218,7 +1362,7 @@ Proof with auto.
       destruct l as [|l'].
       * (* l = 0 *) auto.
       * (* l = S l' *) simpl. apply IHST2...
-        simpl in Hlen; omega.
+        simpl in Hlen; lia.
 Qed.
 
 (** Next, if [ST'] extends [ST], the length of [ST'] is at least that
@@ -1230,19 +1374,20 @@ Lemma length_extends : forall l ST ST',
   l < length ST'.
 Proof with eauto.
   intros. generalize dependent l. induction H0; intros l Hlen.
-    inversion Hlen.
-    simpl in *.
-    destruct l; try omega.
-      apply lt_n_S. apply IHextends. omega.
+    - inversion Hlen.
+    - simpl in *.
+      destruct l; try lia.
+        apply ->Nat.succ_lt_mono. apply IHextends. lia.
 Qed.
 
 (** Finally, [ST ++ T] extends [ST], and [extends] is reflexive. *)
 
 Lemma extends_app : forall ST T,
   extends (ST ++ T) ST.
-Proof with auto.
-  induction ST; intros T...
-  simpl...
+Proof.
+  induction ST; intros T.
+  auto.
+  simpl. auto.
 Qed.
 
 Lemma extends_refl : forall ST,
@@ -1258,13 +1403,13 @@ Qed.
     preservation property: *)
 
 Definition preservation_theorem := forall ST t t' T st st',
-  empty; ST |- t \in T ->
+  <{ empty / ST |-- t \in T }> ->
   store_well_typed ST st ->
   t / st --> t' / st' ->
   exists ST',
-    (extends ST' ST /\
-     empty; ST' |- t' \in T /\
-     store_well_typed ST' st').
+     extends ST' ST /\
+     <{ empty / ST' |-- t' \in T }> /\
+     store_well_typed ST' st'.
 
 (** Note that the preservation theorem merely asserts that there is
     _some_ store typing [ST'] extending [ST] (i.e., agreeing with [ST]
@@ -1291,134 +1436,51 @@ Definition preservation_theorem := forall ST t t' T st st',
     lemma, along with the same machinery about context invariance that
     we used in the proof of the substitution lemma for the STLC. *)
 
-Inductive appears_free_in : string -> tm -> Prop :=
-  | afi_var : forall x,
-      appears_free_in x (var x)
-  | afi_app1 : forall x t1 t2,
-      appears_free_in x t1 -> appears_free_in x (app t1 t2)
-  | afi_app2 : forall x t1 t2,
-      appears_free_in x t2 -> appears_free_in x (app t1 t2)
-  | afi_abs : forall x y T11 t12,
-      y <> x  ->
-      appears_free_in x t12 ->
-      appears_free_in x (abs y T11 t12)
-  | afi_succ : forall x t1,
-      appears_free_in x t1 ->
-      appears_free_in x (scc t1)
-  | afi_pred : forall x t1,
-      appears_free_in x t1 ->
-      appears_free_in x (prd t1)
-  | afi_mult1 : forall x t1 t2,
-      appears_free_in x t1 ->
-      appears_free_in x (mlt t1 t2)
-  | afi_mult2 : forall x t1 t2,
-      appears_free_in x t2 ->
-      appears_free_in x (mlt t1 t2)
-  | afi_if0_1 : forall x t1 t2 t3,
-      appears_free_in x t1 ->
-      appears_free_in x (test0 t1 t2 t3)
-  | afi_if0_2 : forall x t1 t2 t3,
-      appears_free_in x t2 ->
-      appears_free_in x (test0 t1 t2 t3)
-  | afi_if0_3 : forall x t1 t2 t3,
-      appears_free_in x t3 ->
-      appears_free_in x (test0 t1 t2 t3)
-  | afi_ref : forall x t1,
-      appears_free_in x t1 -> appears_free_in x (ref t1)
-  | afi_deref : forall x t1,
-      appears_free_in x t1 -> appears_free_in x (deref t1)
-  | afi_assign1 : forall x t1 t2,
-      appears_free_in x t1 -> appears_free_in x (assign t1 t2)
-  | afi_assign2 : forall x t1 t2,
-      appears_free_in x t2 -> appears_free_in x (assign t1 t2).
-
-Hint Constructors appears_free_in.
-
-Lemma free_in_context : forall x t T Gamma ST,
-   appears_free_in x t ->
-   Gamma; ST |- t \in T ->
-   exists T', Gamma x = Some T'.
-Proof with eauto.
-  intros. generalize dependent Gamma. generalize dependent T.
-  induction H;
-        intros; (try solve [ inversion H0; subst; eauto ]).
-  - (* afi_abs *)
-    inversion H1; subst.
-    apply IHappears_free_in in H8.
-    rewrite update_neq in H8; assumption.
-Qed.
-
-Lemma context_invariance : forall Gamma Gamma' ST t T,
-  Gamma; ST |- t \in T ->
-  (forall x, appears_free_in x t -> Gamma x = Gamma' x) ->
-  Gamma'; ST |- t \in T.
-Proof with eauto.
-  intros.
+Lemma weakening : forall Gamma Gamma' ST t T,
+     includedin Gamma Gamma' ->
+     <{ Gamma / ST |-- t \in T }> ->
+     <{ Gamma' / ST |-- t \in T }>.
+Proof.
+  intros Gamma Gamma' ST t T H Ht.
   generalize dependent Gamma'.
-  induction H; intros...
-  - (* T_Var *)
-    apply T_Var. symmetry. rewrite <- H...
-  - (* T_Abs *)
-    apply T_Abs. apply IHhas_type; intros.
-    unfold update, t_update.
-    destruct (eqb_stringP x x0)...
-  - (* T_App *)
-    eapply T_App.
-      apply IHhas_type1...
-      apply IHhas_type2...
-  - (* T_Mult *)
-    eapply T_Mult.
-      apply IHhas_type1...
-      apply IHhas_type2...
-  - (* T_If0 *)
-    eapply T_If0.
-      apply IHhas_type1...
-      apply IHhas_type2...
-      apply IHhas_type3...
-  - (* T_Assign *)
-    eapply T_Assign.
-      apply IHhas_type1...
-      apply IHhas_type2...
+  induction Ht; eauto using includedin_update.
 Qed.
 
-Lemma substitution_preserves_typing : forall Gamma ST x s S t T,
-  empty; ST |- s \in S ->
-  (update Gamma x S); ST |- t \in T ->
-  Gamma; ST |- ([x:=s]t) \in T.
-Proof with eauto.
-  intros Gamma ST x s S t T Hs Ht.
+Lemma weakening_empty : forall Gamma ST t T,
+     <{ empty / ST |-- t \in T }> ->
+     <{ Gamma / ST |-- t \in T }>.
+Proof.
+  intros Gamma ST t T.
+  eapply weakening.
+  discriminate.
+Qed.
+
+Lemma substitution_preserves_typing : forall Gamma ST x U t v T,
+  <{ x |-> U; Gamma / ST |-- t \in T }> ->
+  <{ empty / ST |-- v \in U }>  ->
+  <{ Gamma / ST |-- [x:=v]t \in T }>.
+Proof.
+  intros Gamma ST x U t v T Ht Hv.
   generalize dependent Gamma. generalize dependent T.
   induction t; intros T Gamma H;
-    inversion H; subst; simpl...
+  (* in each case, we'll want to get at the derivation of H *)
+    inversion H; clear H; subst; simpl; eauto.
   - (* var *)
-    rename s0 into y.
-    destruct (eqb_stringP x y).
-    + (* x = y *)
-      subst.
-      rewrite update_eq in H3.
-      inversion H3; subst.
-      eapply context_invariance...
-      intros x Hcontra.
-      destruct (free_in_context _ _ _ _ _ Hcontra Hs)
-        as [T' HT'].
-      inversion HT'.
-    + (* x <> y *)
-      apply T_Var.
-      rewrite update_neq in H3...
-  - (* abs *) subst.
-    rename s0 into y.
-    destruct (eqb_stringP x y).
-    + (* x = y *)
-      subst.
-      apply T_Abs. eapply context_invariance...
-      intros. rewrite update_shadow. reflexivity.
-    + (* x <> x0 *)
-      apply T_Abs. apply IHt.
-      eapply context_invariance...
-      intros. unfold update, t_update.
-      destruct (eqb_stringP y x0)...
-      subst.
-      rewrite false_eqb_string...
+    rename s into y. destruct (String.eqb_spec x y); subst.
+    + (* x=y *)
+      rewrite update_eq in H2.
+      injection H2 as H2; subst.
+      apply weakening_empty. assumption.
+    + (* x<>y *)
+      apply T_Var. rewrite update_neq in H2; auto.
+  - (* abs *)
+    rename s into y.
+    destruct (String.eqb_spec x y); subst; apply T_Abs.
+    + (* x=y *)
+      rewrite update_shadow in H5. assumption.
+    + (* x<>y *)
+      apply IHt.
+      rewrite update_permute; auto.
 Qed.
 
 (* ================================================================= *)
@@ -1432,7 +1494,7 @@ Qed.
 Lemma assign_pres_store_typing : forall ST st l t,
   l < length st ->
   store_well_typed ST st ->
-  empty; ST |- t \in (store_Tlookup l ST) ->
+  <{ empty / ST |-- t \in $(store_Tlookup l ST) }> ->
   store_well_typed ST (replace l t st).
 Proof with auto.
   intros ST st l t Hlen HST Ht.
@@ -1441,10 +1503,10 @@ Proof with auto.
   intros l' Hl'.
   destruct (l' =? l) eqn: Heqll'.
   - (* l' = l *)
-    apply Nat.eqb_eq in Heqll'; subst.
+    apply eqb_eq in Heqll'; subst.
     rewrite lookup_replace_eq...
   - (* l' <> l *)
-    apply Nat.eqb_neq in Heqll'.
+    apply eqb_neq in Heqll'.
     rewrite lookup_replace_neq...
     rewrite length_replace in Hl'.
     apply H0...
@@ -1465,12 +1527,12 @@ Qed.
 
 Lemma store_weakening : forall Gamma ST ST' t T,
   extends ST' ST ->
-  Gamma; ST |- t \in T ->
-  Gamma; ST' |- t \in T.
+  <{ Gamma / ST |-- t \in T }> ->
+  <{ Gamma / ST' |-- t \in T }>.
 Proof with eauto.
   intros. induction H0; eauto.
   - (* T_Loc *)
-    erewrite <- extends_lookup...
+    rewrite <- (extends_lookup _ _ ST')...
     apply T_Loc.
     eapply length_extends...
 Qed.
@@ -1482,34 +1544,34 @@ Qed.
 
 Lemma store_well_typed_app : forall ST st t1 T1,
   store_well_typed ST st ->
-  empty; ST |- t1 \in T1 ->
+  <{ empty / ST |-- t1 \in T1 }> ->
   store_well_typed (ST ++ T1::nil) (st ++ t1::nil).
 Proof with auto.
   intros.
   unfold store_well_typed in *.
-  inversion H as [Hlen Hmatch]; clear H.
-  rewrite app_length, plus_comm. simpl.
-  rewrite app_length, plus_comm. simpl.
+  destruct H as [Hlen Hmatch].
+  rewrite app_length, add_comm. simpl.
+  rewrite app_length, add_comm. simpl.
   split...
   - (* types match. *)
     intros l Hl.
     unfold store_lookup, store_Tlookup.
-    apply le_lt_eq_dec in Hl; inversion Hl as [Hlt | Heq].
+    apply le_lt_eq_dec in Hl; destruct Hl as [Hlt | Heq].
     + (* l < length st *)
-      apply lt_S_n in Hlt.
+      apply <-Nat.succ_lt_mono in Hlt.
       rewrite !app_nth1...
       * apply store_weakening with ST. apply extends_app.
         apply Hmatch...
       * rewrite Hlen...
     + (* l = length st *)
-      inversion Heq.
-      rewrite app_nth2; try omega.
+      injection Heq as Heq; subst.
+      rewrite app_nth2; try lia.
       rewrite <- Hlen.
-      rewrite minus_diag. simpl.
+      rewrite sub_diag. simpl.
       apply store_weakening with ST...
       { apply extends_app. }
-        rewrite app_nth2; try omega.
-      rewrite minus_diag. simpl. trivial.
+      rewrite app_nth2; [|lia].
+      rewrite sub_diag. simpl. assumption.
 Qed.
 
 (* ================================================================= *)
@@ -1526,18 +1588,18 @@ Proof.
   induction l; intros; [ auto | simpl; rewrite IHl; auto ].
 Qed.
 
-(** And here, at last, is the preservation theorem and proof: *)
+(** And here, at last, is the preservation theorem: *)
 
 Theorem preservation : forall ST t t' T st st',
-  empty; ST |- t \in T ->
+  <{ empty / ST |-- t \in T }> ->
   store_well_typed ST st ->
   t / st --> t' / st' ->
   exists ST',
-    (extends ST' ST /\
-     empty; ST' |- t' \in T /\
-     store_well_typed ST' st').
+     extends ST' ST /\
+     <{ empty / ST' |-- t' \in T }> /\
+     store_well_typed ST' st'.
 Proof with eauto using store_weakening, extends_refl.
-  remember (@empty ty) as Gamma.
+  remember empty as Gamma.
   intros ST t t' T st st' Ht.
   generalize dependent t'.
   induction Ht; intros t' HST Hstep;
@@ -1549,64 +1611,64 @@ Proof with eauto using store_weakening, extends_refl.
     split; try split... eapply substitution_preserves_typing...
   - (* ST_App1 *)
     eapply IHHt1 in H0...
-    inversion H0 as [ST' [Hext [Hty Hsty]]].
+    destruct H0 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   - (* ST_App2 *)
     eapply IHHt2 in H5...
-    inversion H5 as [ST' [Hext [Hty Hsty]]].
+    destruct H5 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   - (* T_Succ *)
     + (* ST_Succ *)
       eapply IHHt in H0...
-      inversion H0 as [ST' [Hext [Hty Hsty]]].
+      destruct H0 as [ST' [Hext [Hty Hsty]]].
       exists ST'...
   - (* T_Pred *)
     + (* ST_Pred *)
       eapply IHHt in H0...
-      inversion H0 as [ST' [Hext [Hty Hsty]]].
+      destruct H0 as [ST' [Hext [Hty Hsty]]].
       exists ST'...
   (* T_Mult *)
   - (* ST_Mult1 *)
     eapply IHHt1 in H0...
-    inversion H0 as [ST' [Hext [Hty Hsty]]].
+    destruct H0 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   - (* ST_Mult2 *)
     eapply IHHt2 in H5...
-    inversion H5 as [ST' [Hext [Hty Hsty]]].
+    destruct H5 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   - (* T_If0 *)
     + (* ST_If0_1 *)
       eapply IHHt1 in H0...
-      inversion H0 as [ST' [Hext [Hty Hsty]]].
-      exists ST'... split...
+      destruct H0 as [ST' [Hext [Hty Hsty]]].
+      exists ST'. split...
   (* T_Ref *)
   - (* ST_RefValue *)
     exists (ST ++ T1::nil).
     inversion HST; subst.
     split.
-      apply extends_app.
+    { apply extends_app. }
     split.
-      replace (Ref T1)
-        with (Ref (store_Tlookup (length st) (ST ++ T1::nil))).
-      apply T_Loc.
-      rewrite <- H. rewrite app_length, plus_comm. simpl. omega.
+    { replace <{{ Ref T1 }}>
+        with <{{ Ref $(store_Tlookup (length st) (ST ++ T1::nil)) }}>.
+      { apply T_Loc.
+        rewrite <- H. rewrite app_length, add_comm. simpl. lia. }
       unfold store_Tlookup. rewrite <- H. rewrite nth_eq_last.
-      reflexivity.
-      apply store_well_typed_app; assumption.
+      reflexivity. }
+    apply store_well_typed_app; assumption.
   - (* ST_Ref *)
     eapply IHHt in H0...
-    inversion H0 as [ST' [Hext [Hty Hsty]]].
+    destruct H0 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   (* T_Deref *)
   - (* ST_DerefLoc *)
     exists ST. split; try split...
-    inversion HST as [_ Hsty].
-    replace T11 with (store_Tlookup l ST).
+    destruct HST as [_ Hsty].
+    replace T1 with (store_Tlookup l ST).
     apply Hsty...
     inversion Ht; subst...
   - (* ST_Deref *)
     eapply IHHt in H0...
-    inversion H0 as [ST' [Hext [Hty Hsty]]].
+    destruct H0 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   (* T_Assign *)
   - (* ST_Assign *)
@@ -1615,15 +1677,15 @@ Proof with eauto using store_weakening, extends_refl.
     inversion Ht1; subst...
   - (* ST_Assign1 *)
     eapply IHHt1 in H0...
-    inversion H0 as [ST' [Hext [Hty Hsty]]].
+    destruct H0 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
   - (* ST_Assign2 *)
     eapply IHHt2 in H5...
-    inversion H5 as [ST' [Hext [Hty Hsty]]].
+    destruct H5 as [ST' [Hext [Hty Hsty]]].
     exists ST'...
 Qed.
 
-(** **** Exercise: 3 stars, standard (preservation_informal)  
+(** **** Exercise: 3 stars, standard (preservation_informal)
 
     Write a careful informal proof of the preservation theorem,
     concentrating on the [T_App], [T_Deref], [T_Assign], and [T_Ref]
@@ -1644,11 +1706,11 @@ Definition manual_grade_for_preservation_informal : option (nat*string) := None.
     with a few new cases for the new syntactic constructs. *)
 
 Theorem progress : forall ST t T st,
-  empty; ST |- t \in T ->
+  <{ empty / ST |-- t \in T }> ->
   store_well_typed ST st ->
   (value t \/ exists t' st', t / st --> t' / st').
 Proof with eauto.
-  intros ST t T st Ht HST. remember (@empty ty) as Gamma.
+  intros ST t T st Ht HST. remember empty as Gamma.
   induction Ht; subst; try solve_by_invert...
   - (* T_App *)
     right. destruct IHHt1 as [Ht1p | Ht1p]...
@@ -1656,29 +1718,29 @@ Proof with eauto.
       inversion Ht1p; subst; try solve_by_invert.
       destruct IHHt2 as [Ht2p | Ht2p]...
       * (* t2 steps *)
-        inversion Ht2p as [t2' [st' Hstep]].
-        exists (app (abs x T t) t2'), st'...
+        destruct Ht2p as [t2' [st' Hstep]].
+        exists <{ (\ x0 : T0, t0) t2' }>, st'...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (app t1' t2), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ t1' t2 }>, st'...
   - (* T_Succ *)
     right. destruct IHHt as [Ht1p | Ht1p]...
     + (* t1 is a value *)
       inversion Ht1p; subst; try solve [ inversion Ht ].
       * (* t1 is a const *)
-        exists (const (S n)), st...
+        exists <{ $(S n) }>, st...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (scc t1'), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ succ t1' }>, st'...
   - (* T_Pred *)
     right. destruct IHHt as [Ht1p | Ht1p]...
     + (* t1 is a value *)
       inversion Ht1p; subst; try solve [inversion Ht ].
       * (* t1 is a const *)
-        exists (const (pred n)), st...
+        exists <{ $(n - 1) }>, st...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (prd t1'), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ pred t1' }>, st'...
   - (* T_Mult *)
     right. destruct IHHt1 as [Ht1p | Ht1p]...
     + (* t1 is a value *)
@@ -1686,13 +1748,13 @@ Proof with eauto.
       destruct IHHt2 as [Ht2p | Ht2p]...
       * (* t2 is a value *)
         inversion Ht2p; subst; try solve [inversion Ht2].
-        exists (const (mult n n0)), st...
+        exists <{ $(n * n0) }>, st...
       * (* t2 steps *)
-        inversion Ht2p as [t2' [st' Hstep]].
-        exists (mlt (const n) t2'), st'...
+        destruct Ht2p as [t2' [st' Hstep]].
+        exists <{ n * t2' }>, st'...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (mlt t1' t2), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ t1' * t2 }>, st'...
   - (* T_If0 *)
     right. destruct IHHt1 as [Ht1p | Ht1p]...
     + (* t1 is a value *)
@@ -1701,13 +1763,13 @@ Proof with eauto.
       * (* n = 0 *) exists t2, st...
       * (* n = S n' *) exists t3, st...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (test0 t1' t2 t3), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ if0 t1' then t2 else t3 }>, st'...
   - (* T_Ref *)
     right. destruct IHHt as [Ht1p | Ht1p]...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (ref t1'), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ref t1'}>, st'...
   - (* T_Deref *)
     right. destruct IHHt as [Ht1p | Ht1p]...
     + (* t1 is a value *)
@@ -1716,8 +1778,8 @@ Proof with eauto.
       inversion Ht; subst. inversion HST; subst.
       rewrite <- H...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (deref t1'), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ ! t1' }>, st'...
   - (* T_Assign *)
     right. destruct IHHt1 as [Ht1p|Ht1p]...
     + (* t1 is a value *)
@@ -1726,13 +1788,13 @@ Proof with eauto.
         inversion Ht1p; subst; try solve_by_invert.
         eexists. eexists. apply ST_Assign...
         inversion HST; subst. inversion Ht1; subst.
-        rewrite H in H5...
+        rewrite H in H4...
       * (* t2 steps *)
-        inversion Ht2p as [t2' [st' Hstep]].
-        exists (assign t1 t2'), st'...
+        destruct Ht2p as [t2' [st' Hstep]].
+        exists <{ t1 := t2' }>, st'...
     + (* t1 steps *)
-      inversion Ht1p as [t1' [st' Hstep]].
-      exists (assign t1' t2), st'...
+      destruct Ht1p as [t1' [st' Hstep]].
+      exists <{ t1' := t2 }>, st'...
 Qed.
 
 (* ################################################################# *)
@@ -1745,25 +1807,26 @@ Qed.
     What about STLC + references?  Surprisingly, adding references
     causes us to lose the normalization property: there exist
     well-typed terms in the STLC + references which can continue to
-    reduce forever, without ever reaching a normal form!
+    reduce forever, without ever reaching a normal form! *)
 
-    How can we construct such a term?  The main idea is to make a
+(** How can we construct such a term?  The main idea is to make a
     function which calls itself.  We first make a function which calls
     another function stored in a reference cell; the trick is that we
     then smuggle in a reference to itself!
 
-   (\r:Ref (Unit -> Unit).
-        r := (\x:Unit.(!r) unit); (!r) unit)
-   (ref (\x:Unit.unit))
+   (\r:Ref (Unit -> Unit),
+        r := (\x:Unit,(!r) unit); (!r) unit)
+   (ref (\x:Unit,unit))
+*)
 
-   First, [ref (\x:Unit.unit)] creates a reference to a cell of type
-   [Unit -> Unit].  We then pass this reference as the argument to a
-   function which binds it to the name [r], and assigns to it the
-   function [\x:Unit.(!r) unit] -- that is, the function which ignores
-   its argument and calls the function stored in [r] on the argument
-   [unit]; but of course, that function is itself!  To start the
-   divergent loop, we execute the function stored in the cell by
-   evaluating [(!r) unit].
+(** First, [ref (\x:Unit,unit)] creates a reference to a cell of type
+    [Unit -> Unit].  We then pass this reference as the argument to a
+    function which binds it to the name [r], and assigns to it the
+    function [\x:Unit,(!r) unit] -- that is, the function which ignores
+    its argument and calls the function stored in [r] on the argument
+    [unit]; but of course, that function is itself!  To start the
+    divergent loop, we execute the function stored in the cell by
+    evaluating [(!r) unit].
 
    Here is the divergent term in Coq: *)
 
@@ -1782,27 +1845,25 @@ Module RefsAndNontermination.
 Import ExampleVariables.
 
 Definition loop_fun :=
-  abs x Unit (app (deref (var r)) unit).
+  <{ \x : Unit, (!r) unit }>.
 
 Definition loop :=
-  app
-    (abs r (Ref (Arrow Unit Unit))
-      (tseq (assign (var r) loop_fun)
-              (app (deref (var r)) unit)))
-    (ref (abs x Unit unit)).
-
+  <{ (\r : Ref (Unit -> Unit), (( r := loop_fun ); ( (! r) unit ) )) (ref (\x : Unit, unit)) }> .
 (** This term is well typed: *)
 
-Lemma loop_typeable : exists T, empty; nil |- loop \in T.
+Import ListNotations.
+
+Lemma loop_typeable : exists T, <{ empty / [] |-- loop \in T }>.
 Proof with eauto.
   eexists. unfold loop. unfold loop_fun.
   eapply T_App...
   eapply T_Abs...
   eapply T_App...
     eapply T_Abs. eapply T_App. eapply T_Deref. eapply T_Var.
-    unfold update, t_update. simpl. reflexivity. auto.
+    rewrite update_neq; [|intros; discriminate].
+    rewrite update_eq. reflexivity. auto.
   eapply T_Assign.
-    eapply T_Var. unfold update, t_update. simpl. reflexivity.
+    eapply T_Var. rewrite update_eq. reflexivity.
   eapply T_Abs.
     eapply T_App...
       eapply T_Deref. eapply T_Var. reflexivity.
@@ -1842,7 +1903,7 @@ Notation "t1 '/' st '-->+' t2 '/' st'" :=
 Ltac print_goal := match goal with |- ?x => idtac x end.
 Ltac reduce :=
     repeat (print_goal; eapply multi_step ;
-            [ (eauto 10; fail) | (instantiate; compute)];
+            [ (eauto 10; fail) | compute];
             try solve [apply multi_refl]).
 
 (** Next, we use [reduce] to show that [loop] steps to
@@ -1850,7 +1911,7 @@ Ltac reduce :=
 
 Lemma loop_steps_to_loop_fun :
   loop / nil -->*
-  app (deref (loc 0)) unit / cons ([r:=loc 0]loop_fun) nil.
+  <{ (! (loc 0)) unit }> / cons <{ [r := loc 0] loop_fun }> nil.
 Proof.
   unfold loop.
   reduce.
@@ -1860,15 +1921,15 @@ Qed.
     two steps to itself! *)
 
 Lemma loop_fun_step_self :
-  app (deref (loc 0)) unit / cons ([r:=loc 0]loop_fun) nil -->+
-  app (deref (loc 0)) unit / cons ([r:=loc 0]loop_fun) nil.
+  <{ (! (loc 0)) unit }> / cons <{ [r := loc 0] loop_fun }> nil -->+
+  <{ (! (loc 0)) unit }> / cons <{ [r := loc 0] loop_fun }> nil.
 Proof with eauto.
   unfold loop_fun; simpl.
   eapply sc_step. apply ST_App1...
   eapply sc_one. compute. apply ST_AppAbs...
 Qed.
 
-(** **** Exercise: 4 stars, standard (factorial_ref)  
+(** **** Exercise: 4 stars, standard (factorial_ref)
 
     Use the above ideas to implement a factorial function in STLC with
     references.  (There is no need to prove formally that it really
@@ -1879,7 +1940,7 @@ Qed.
 Definition factorial : tm
   (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
 
-Lemma factorial_type : empty; nil |- factorial \in (Arrow Nat Nat).
+Lemma factorial_type : <{ empty / nil |-- factorial \in (Nat -> Nat) }>.
 Proof with eauto.
   (* FILL IN HERE *) Admitted.
 
@@ -1887,19 +1948,19 @@ Proof with eauto.
     uncomment the example below; the proof should be fully
     automatic using the [reduce] tactic. *)
 
-(* 
+(*
 Lemma factorial_4 : exists st,
-  app factorial (const 4) / nil -->* const 24 / st.
+  <{ factorial 4 }> / nil -->* tm_const 24 / st.
 Proof.
   eexists. unfold factorial. reduce.
 Qed.
-
-    [] *)
+*)
+(** [] *)
 
 (* ################################################################# *)
 (** * Additional Exercises *)
 
-(** **** Exercise: 5 stars, standard, optional (garabage_collector)  
+(** **** Exercise: 5 stars, standard, optional (garbage_collector)
 
     Challenge problem: modify our formalization to include an account
     of garbage collection, and prove that it satisfies whatever nice
@@ -1910,5 +1971,4 @@ Qed.
 End RefsAndNontermination.
 End STLCRef.
 
-
-(* Thu Feb 7 20:09:25 EST 2019 *)
+(* 2025-08-24 13:47 *)

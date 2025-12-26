@@ -1,0 +1,333 @@
+diff --git src/vc/Hashfun.v src/vc/Hashfun.v
+index 6faf4ea..85d8e6e 100644
+--- src/vc/Hashfun.v
++++ src/vc/Hashfun.v
+@@ -4,6 +4,7 @@
+    external chaining.  See {https://www.cs.princeton.edu/~appel/HashTables.pdf}
+    for an introduction to hash tables.
+ 
++<<
+     /* First, access a few standard-library functions */
+     #include <stddef.h>
+     extern void * malloc (size_t n);
+@@ -52,12 +53,12 @@
+     /* create an empty table */
+     struct hashtable *new_table (void) {
+       int i;
+-      struct hashtable *p = 
++      struct hashtable *p =
+            (struct hashtable * )malloc(sizeof(struct hashtable));
+       if (!p) exit(1);
+       for (i=0; i<N; i++) p->buckets[i]=NULL;
+       return p;
+-    }  
++    }
+ 
+     /* allocate and initialize a new linked-list cell */
+     struct cell *new_cell (char *key, int count, struct cell *next) {
+@@ -96,7 +97,7 @@
+           return;
+         }
+       }
+-    }  
++    }
+ 
+     /* increment to the occurrence count of the string s the whole hash table */
+     void incr (struct hashtable *table, char *s) {
+@@ -104,6 +105,7 @@
+       unsigned int b = h % N;
+       incr_list (& table->buckets[b], s);
+     }
++>>
+ *)
+ 
+ (* ================================================================= *)
+diff --git src/vc/Preface.v src/vc/Preface.v
+index 6bfbca2..f2228da 100644
+--- src/vc/Preface.v
++++ src/vc/Preface.v
+@@ -170,7 +170,7 @@ Require Import Coq.Strings.String.
+ Open Scope string.
+ Require Import VST.veric.version.  (* If this line fails, it means
+   you don't have a VST installed. *)
+-Definition release_needed := "2.11.1".
++Definition release_needed := "2.10".
+ Goal release = release_needed.
+ reflexivity ||
+ let need := constr:(release_needed) in let need := eval hnf in need in
+diff --git src/vc/VSU_stdlib2.v src/vc/VSU_stdlib2.v
+index 4c62d3a..f2e6b31 100644
+--- src/vc/VSU_stdlib2.v
++++ src/vc/VSU_stdlib2.v
+@@ -96,15 +96,17 @@ Fixpoint freelistrep (n: nat) (p: val) : mpred :=
+ 
+ Arguments freelistrep n p : simpl never.
+ 
+-Lemma freelistrep_local_prop: forall n p, 
++Lemma freelistrep_local_prop: forall n p,
+    freelistrep n p |--  !! (is_pointer_or_null p /\ (n=0<->p=nullval) /\ (n>0<->isptr p))%nat.
+ (* FILL IN HERE *) Admitted.
++(** The following hint adds this lemma to the hint database. *)
+ #[export] Hint Resolve freelistrep_local_prop : saturate_local.
+ 
+ Lemma freelistrep_valid_pointer:
+   forall n p,
+    freelistrep n p |-- valid_pointer p.
+ (* FILL IN HERE *) Admitted.
++(** The following hint adds this lemma to the hint database. *)
+ #[export] Hint Resolve freelistrep_valid_pointer : valid_pointer.
+ (** [] *)
+ 
+diff --git src/vc/Verif_append2.v src/vc/Verif_append2.v
+index 5cc4621..21e7a00 100644
+--- src/vc/Verif_append2.v
++++ src/vc/Verif_append2.v
+@@ -317,6 +317,7 @@ method on a slightly different data structure.
+ 
+    Consider the following C function, [append2].
+ 
++<<
+ struct list * append2 (struct list * x, struct list * y) {
+   struct list **retp, **curp;
+   retp = & x;
+@@ -327,9 +328,10 @@ struct list * append2 (struct list * x, struct list * y) {
+   *curp = y;
+   return *retp;
+ }
+-
++>>
+  In comparison, this is [append].
+ 
++<<
+ struct list *append (struct list *x, struct list *y) {
+   struct list *t, *u;
+   if (x==NULL)
+@@ -345,6 +347,7 @@ struct list *append (struct list *x, struct list *y) {
+     return x;
+   }
+ }
++>>
+ 
+   In [append], [u] always equals [t -> tail] after every iteration. When
+   exiting the loop, the value of [u] is always null; that is not important.
+diff --git src/vc/Verif_hash.v src/vc/Verif_hash.v
+index 743b144..2efc601 100644
+--- src/vc/Verif_hash.v
++++ src/vc/Verif_hash.v
+@@ -279,22 +279,24 @@ Lemma body_hash: semax_body Vprog Gprog f_hash hash_spec.
+ Proof.
+ start_function.
+ unfold cstring in *.
+-(** 
++(**
+   In the PROP part of your loop invariant, you'll want to maintain
+     [0 <= i <= Zlength contents].
+   In the LOCAL part of your loop invariant, try to use something like
+ 
++<<
+     temp _c (Vbyte (Znth i (contents ++ [Byte.zero]))
++>>
++  instead of
+ 
+-  instead of 
+-
++<<
+     temp _c (Znth i (map Vbyte (...)))
+-
+-  The reason is that [temp _c (Vint x)] or [temp _c (Vbyte y)] is much 
++>>
++  The reason is that [temp _c (Vint x)] or [temp _c (Vbyte y)] is much
+   easier for Floyd to handle than [temp _c X]
+   where X is a general formula of type [val].
+- 
+-  Late in the proof of the loop body, the lemma [hashfun_snoc] will 
++
++  Late in the proof of the loop body, the lemma [hashfun_snoc] will
+   be useful. *)
+ (* FILL IN HERE *) Admitted.
+ (** [] *)
+@@ -635,7 +637,7 @@ Print listboxrep. (* = fun (al : list (list byte * Z)) (r : val) =>
+ (** That is, [r] is a single-word box containing pointer [p],
+    and [p] is a listrep.  Let's examine the loop that we want
+    to verify:
+-
++<<
+ void incr_list (struct cell **r0, char *s) {
+   struct cell *p, **r;
+   for(r=r0; ; r=&p->next) {
+@@ -643,29 +645,34 @@ void incr_list (struct cell **r0, char *s) {
+     if (!p) { *r = new_cell(s,1,NULL); return; }
+     if (strcmp(p->key, s)==0) {p->count++; return;}
+ } }
++>>
+ 
+   We will describe variable [r] something like this:
+-
++<<
+   PROP() LOCAL(temp _r r) SEP(data_at Ews (tptr tcell) q r).
++>>
+ 
+   That is, pointer to a single word containing [q].  But when
+   we do [r = &(p->next)] we will have [r] pointing into the middle
+   of a [struct cell] record, at the [next] field.  To  describe that
+   single field all alone, we use [unfold_data_at] to split
+-
++<<
+   data_at Ews tcell (x,y,q) p
++>>
+ 
+   into four separate conjuncts:
+-
++<<
+   field_at Ews tcell [StructField _key] x p *
+   field_at Ews tcell [StructField _count] y p *
+   spacer Ews (nested_field_offset tcell [StructField _count] + sizeof tuint)
+                        (nested_field_offset tcell [StructField _next]) p *
+   field_at Ews tcell [StructField _next] q p
++>>
+ 
+   and then we must rewrite the last conjunct into
+-
++<<
+   data_at Ews (tptr tcell) q (field_address tcell [StructField _next] p)
++>>
+ 
+   where the [(field_address _ _ _)] is an "address arithmetic" expression
+   that describes the offset, in bytes, from [p] to [&(p->next)].
+@@ -1002,6 +1009,7 @@ Check example_field_at_data_at'''. (* : forall p (z: val),
+ 
+ (**
+ 
++<<
+   void incr_list (struct cell **r0, char *s);
+ 
+   void incr (struct hashtable *table, char *s) {
+@@ -1009,21 +1017,21 @@ Check example_field_at_data_at'''. (* : forall p (z: val),
+     unsigned int b = h % N;
+     incr_list (& table->buckets[b], s);
+   }
+-
+-  The difficult part here is the function-argument, [ & table->buckets[b] ].
+-  The precondition of the [incr_list] function requires just a single
++>>
++  The difficult part here is the function-argument.
++  The precondition of the incr_list function requires just a single
+   pointer-to-pointer-to-cell, but we have an entire array of 109
+-  pointers-to-cell.  
++  pointers-to-cell.
+ 
+   We start with [table], a pointer to a struct containing one
+-  field that's an array of 109 elements.  For calling [incr_list],
++  field that's an array of 109 elements.  For calling incr_list,
+   we need to split that into two separate data structures:
+-  - the single-element array at [table->buckets+b]
++  - the single-element array at table->buckets+b
+   - all the rest of the data structure, including the other fields
+     of [struct hashtable] (if there were any) and the
+     elements [0..b-1] and [b+1..108] of the array.
+ 
+-  The [wand_slice_array] lemma can do this:  *)
++  The wand_slice_array lemma can do this:  *)
+ 
+ Check wand_slice_array.
+ (*  : forall (lo hi n : Z) (t : type) (sh : Share.t)
+diff --git src/vc/Verif_reverse.v src/vc/Verif_reverse.v
+index cd38ff6..007474e 100644
+--- src/vc/Verif_reverse.v
++++ src/vc/Verif_reverse.v
+@@ -714,21 +714,24 @@ Proof.
+   abbreviate_semax.
+ (** Now, our proof goal is:
+ 
++<<
+   semax Delta
+     (PROP ( )
+      LOCAL (temp _t y; temp _w w; temp _v v)
+      SEP (listrep s1 w; data_at Tsh t_list (h, y) v; listrep r y))
+     ((_v -> _tail) = _w; MORE_COMMANDS)
+     POSTCONDITION.
+-
++>>
+ The next [forward] tactic will do symbolic execution of [v->tail = w]. *)
+    forward. (* v->tail = w;
+ 
+     It turns the precondition into:
+ 
++<<
+      PROP ( )
+      LOCAL (temp _t y; temp _w w; temp _v v)
+      SEP (listrep s1 w; data_at Tsh t_list (h, w) v; listrep r y).
++>>
+ 
+ It is no problem that the separating conjunct [data_at Tsh t_list (h, y) v] is
+ turned into [data_at Tsh t_list (h, w) v]. But why weren't the other separating
+diff --git src/vc/Verif_strlib.v src/vc/Verif_strlib.v
+index bf1cc3a..3b03d36 100644
+--- src/vc/Verif_strlib.v
++++ src/vc/Verif_strlib.v
+@@ -309,14 +309,15 @@ Lemma body_strlen: semax_body Vprog Gprog f_strlen strlen_spec.
+ Proof.
+ start_function.
+ (** Look at the proof goal below the line.  We have the assertion,
+-
++<<
+   PROP ( )  LOCAL (temp _str str)  SEP (cstring sh s str))
++>>
+ 
+  When proving things about a string-manipulating function, the
+-  first decision is:  Does this function treat the string _abstractly_
++  first decision is:  Does this function treat the string abstractly
+   or does it subscript the array and look at the individual characters?
+-  - If abstract, then we should _not_ unfold the definition [cstring].
+-  - If we subscript the array directly, we _must_ unfold [cstring].
++  - If abstract, then we should not unfold the definition [cstring].
++  - If we subscript the array directly, we must unfold [cstring].
+   Since this [strlen] function does access the array contents, we
+   start by unfolding [cstring].*)
+ unfold cstring in *.
+diff --git src/vc/Verif_sumarray.v src/vc/Verif_sumarray.v
+index 3369066..e558a2a 100644
+--- src/vc/Verif_sumarray.v
++++ src/vc/Verif_sumarray.v
+@@ -715,17 +715,19 @@ Proof.
+   and we can see its SEP assertion in the precondition of the
+   current proof goal:
+ 
++<<
+    data_at Ews (tarray tuint 4)
+            (map Vint [Int.repr 1; Int.repr 2; Int.repr 3; Int.repr 4])
+            (gv _four)
++>>
+ *)
+ 
+-(** SEE ALSO: VC.pdf Chapter 20 (_Function calls_)
++(** SEE ALSO: VC.pdf Chapter 20 (Function calls)
+ 
+   We are ready to prove the function-call, [s = sumarray(four,4);]
+   We use the [forward_call] tactic, and for the argument we must supply
+   a tuple of values that instantiates the WITH clause of the called
+-  function's funspec.  In [DECLARE _sumarray], the [WITH] clause reads,
++  function's funspec.  In the declaration of sumarray, the [WITH] clause reads,
+   [WITH a: val, sh : share, contents : list Z, size: Z].
+   Therefore the argument to [forward_call] must be a four-tuple of type,
+   [(val * share * list Z * Z)].  *)
+@@ -745,7 +747,7 @@ Qed.
+ (* ================================================================= *)
+ (** ** Tying all the functions together *)
+ 
+-(** SEE ALSO: VC.pdf Chapter 21 (_Tying all the functions together_)
++(** SEE ALSO: VC.pdf Chapter 21 (Tying all the functions together)
+ 
+   The C program may do input/output, affecting the state of the
+   outside world.  This state is described (abstractly) by the [Espec],
+--- Makefile.coq.orig	2025-12-28 00:00:00.000000000 +0100
++++ Makefile.coq	2025-12-28 00:00:00.000000000 +0100
+@@ -541,7 +541,7 @@
+ 	$(SHOW)'COQDOC -pdf $(GAL)'
+ 	$(HIDE)$(COQDOC) \
+ 		-toc $(COQDOCFLAGS) -pdf $(GAL) $(COQDOCLIBS) \
+-		-o $@ `$(COQDEP) -sort $(VFILES)`
++		-o $@ Preface.v Verif_sumarray.v Verif_reverse.v Verif_stack.v Verif_triang.v Verif_append1.v Verif_append2.v Verif_strlib.v Hashfun.v Verif_hash.v VSU_intro.v Spec_stack.v Spec_triang.v Spec_stdlib.v VSU_stack.v VSU_triang.v VSU_stdlib.v VSU_main.v VSU_stdlib2.v VSU_main2.v Postscript.v Bib.v
+
+ # FIXME: not quite right, since the output name is different
+ gallinahtml: GAL=-g

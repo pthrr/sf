@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From LF Require Import ImpCEvalFun.
 
 Parameter MISSING: Type.
@@ -32,23 +32,12 @@ Import Check.
 
 Goal True.
 
-idtac "-------------------  pup_to_n  --------------------".
-idtac " ".
-
-idtac "#> pup_to_n".
-idtac "Possible points: 2".
-check_type @pup_to_n (Imp.com).
-idtac "Assumptions:".
-Abort.
-Print Assumptions pup_to_n.
-Goal True.
-idtac " ".
-
 idtac "-------------------  ceval_step__ceval_inf  --------------------".
 idtac " ".
 
 idtac "#> Manually graded: ceval_step__ceval_inf".
-idtac "Possible points: 4".
+idtac "Advanced".
+idtac "Possible points: 6".
 print_manual_grade manual_grade_for_ceval_step__ceval_inf.
 idtac " ".
 
@@ -58,9 +47,10 @@ idtac " ".
 idtac "#> ceval__ceval_step".
 idtac "Possible points: 3".
 check_type @ceval__ceval_step (
-(forall (c : Imp.com) (st st' : Imp.state),
- Imp.ceval c st st' ->
- exists i : nat, ceval_step st c i = @Some Imp.state st')).
+(forall (c : Imp.com) (st st' : Imp.state) (_ : Imp.ceval c st st'),
+ @ex nat
+   (fun i : nat =>
+    @eq (option Imp.state) (ceval_step st c i) (@Some Imp.state st')))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions ceval__ceval_step.
@@ -69,20 +59,39 @@ idtac " ".
 
 idtac " ".
 
-idtac "Max points - standard: 9".
+idtac "Max points - standard: 3".
 idtac "Max points - advanced: 9".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "plus_le".
+idtac "le_trans".
+idtac "le_plus_l".
+idtac "add_le_cases".
+idtac "Sn_le_Sm__n_le_m".
+idtac "O_le_n".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
 idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
+idtac "".
 idtac "********** Standard **********".
-idtac "---------- pup_to_n ---------".
-Print Assumptions pup_to_n.
-idtac "---------- ceval_step__ceval_inf ---------".
-idtac "MANUAL".
 idtac "---------- ceval__ceval_step ---------".
 Print Assumptions ceval__ceval_step.
 idtac "".
 idtac "********** Advanced **********".
+idtac "---------- ceval_step__ceval_inf ---------".
+idtac "MANUAL".
 Abort.
 
-(* Wed Jan 9 12:02:27 EST 2019 *)
+(* 2025-09-02 21:52 *)
+
+(* 2025-09-02 21:52 *)

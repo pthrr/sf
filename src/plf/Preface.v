@@ -139,6 +139,35 @@
     chapter. *)
 
 (* ################################################################# *)
+(** * Practicalities *)
+(* ================================================================= *)
+(** ** Recommended Citation Format *)
+
+(** If you want to refer to this volume in your own writing, please
+    do so as follows:
+
+    @book            {Pierce:SF2,
+    author       =   {Benjamin C. Pierce and
+		     Arthur Azevedo de Amorim and
+		     Chris Casinghino and
+		     Marco Gaboardi and
+		     Michael Greenberg and
+		     Cătălin Hriţcu and
+		     Vilhelm Sjöberg and
+		     Andrew Tolmach and
+		     Brent Yorgey},
+    editor       =   {Benjamin C. Pierce},
+    title        =   "Programming Language Foundations",
+    series       =   "Software Foundations",
+    volume       =   "2",
+    year         =   "2025",
+    publisher    =   "Electronic textbook",
+    note         =   {Version 6.7,
+                      \URL{http://softwarefoundations.cis.upenn.edu} },
+    }
+*)
+
+(* ################################################################# *)
 (** * Note for Instructors *)
 
 (** If you plan to use these materials in your own course, you will
@@ -154,5 +183,4 @@
     NSF Expeditions grant 1521523, _The Science of Deep
     Specification_. *)
 
-
-(* Thu Feb 7 20:09:22 EST 2019 *)
+(* 2025-08-20 18:04 *)

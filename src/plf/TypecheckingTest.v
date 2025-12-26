@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From PLF Require Import Typechecking.
 
 Parameter MISSING: Type.
@@ -32,35 +32,84 @@ Import Check.
 
 Goal True.
 
-idtac "-------------------  typechecker_extensions  --------------------".
+idtac "-------------------  type_check_defn  --------------------".
 idtac " ".
 
-idtac "#> Manually graded: TypecheckerExtensions.type_checking_sound".
+idtac "#> Manually graded: TypecheckerExtensions.type_check_defn".
+idtac "Possible points: 6".
+print_manual_grade TypecheckerExtensions.manual_grade_for_type_check_defn.
+idtac " ".
+
+idtac "-------------------  ext_type_checking_sound  --------------------".
+idtac " ".
+
+idtac "#> TypecheckerExtensions.type_checking_sound".
 idtac "Possible points: 2".
-print_manual_grade TypecheckerExtensions.manual_grade_for_type_checking_sound.
+check_type @TypecheckerExtensions.type_checking_sound (
+(forall (Gamma : MoreStlc.STLCExtended.context)
+   (t : MoreStlc.STLCExtended.tm) (T : MoreStlc.STLCExtended.ty)
+   (_ : @eq (option MoreStlc.STLCExtended.ty)
+          (TypecheckerExtensions.type_check Gamma t)
+          (@Some MoreStlc.STLCExtended.ty T)),
+ MoreStlc.STLCExtended.has_type Gamma t T)).
+idtac "Assumptions:".
+Abort.
+Print Assumptions TypecheckerExtensions.type_checking_sound.
+Goal True.
 idtac " ".
 
-idtac "#> Manually graded: TypecheckerExtensions.type_checking_complete".
-idtac "Possible points: 3".
-print_manual_grade TypecheckerExtensions.manual_grade_for_type_checking_complete.
+idtac "-------------------  ext_type_checking_complete  --------------------".
+idtac " ".
+
+idtac "#> TypecheckerExtensions.type_checking_complete".
+idtac "Possible points: 2".
+check_type @TypecheckerExtensions.type_checking_complete (
+(forall (Gamma : MoreStlc.STLCExtended.context)
+   (t : MoreStlc.STLCExtended.tm) (T : MoreStlc.STLCExtended.ty)
+   (_ : MoreStlc.STLCExtended.has_type Gamma t T),
+ @eq (option MoreStlc.STLCExtended.ty)
+   (TypecheckerExtensions.type_check Gamma t)
+   (@Some MoreStlc.STLCExtended.ty T))).
+idtac "Assumptions:".
+Abort.
+Print Assumptions TypecheckerExtensions.type_checking_complete.
+Goal True.
 idtac " ".
 
 idtac " ".
 
-idtac "Max points - standard: 5".
-idtac "Max points - advanced: 5".
+idtac "Max points - standard: 10".
+idtac "Max points - advanced: 10".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "CSeq_congruence".
+idtac "fold_constants_bexp_sound".
+idtac "succ_hastype_nat__hastype_nat".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
 idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
+idtac "".
 idtac "********** Standard **********".
-idtac "---------- type_checking_sound ---------".
+idtac "---------- type_check_defn ---------".
 idtac "MANUAL".
-idtac "---------- type_checking_complete ---------".
-idtac "MANUAL".
+idtac "---------- TypecheckerExtensions.type_checking_sound ---------".
+Print Assumptions TypecheckerExtensions.type_checking_sound.
+idtac "---------- TypecheckerExtensions.type_checking_complete ---------".
+Print Assumptions TypecheckerExtensions.type_checking_complete.
 idtac "".
 idtac "********** Advanced **********".
 Abort.
 
-(* Thu Feb 7 20:08:35 EST 2019 *)
+(* 2025-08-24 14:29 *)
 
-(* Thu Feb 7 20:09:28 EST 2019 *)
+(* 2025-08-24 14:29 *)

@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From LF Require Import Tactics.
 
 Parameter MISSING: Type.
@@ -36,8 +36,10 @@ idtac "-------------------  apply_exercise1  --------------------".
 idtac " ".
 
 idtac "#> rev_exercise1".
-idtac "Possible points: 3".
-check_type @rev_exercise1 ((forall l l' : list nat, l = @rev nat l' -> l' = @rev nat l)).
+idtac "Possible points: 2".
+check_type @rev_exercise1 (
+(forall (l l' : list nat) (_ : @eq (list nat) l (@rev nat l')),
+ @eq (list nat) l' (@rev nat l))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions rev_exercise1.
@@ -48,10 +50,12 @@ idtac "-------------------  injection_ex3  --------------------".
 idtac " ".
 
 idtac "#> injection_ex3".
-idtac "Possible points: 1".
+idtac "Possible points: 3".
 check_type @injection_ex3 (
-(forall (X : Type) (x y z : X) (l j : list X),
- x :: y :: l = z :: j -> y :: l = x :: j -> x = y)).
+(forall (X : Type) (x y z : X) (l j : list X)
+   (_ : @eq (list X) (@cons X x (@cons X y l)) (@cons X z j))
+   (_ : @eq (list X) j (@cons X z l)),
+ @eq X x y)).
 idtac "Assumptions:".
 Abort.
 Print Assumptions injection_ex3.
@@ -64,23 +68,12 @@ idtac " ".
 idtac "#> discriminate_ex3".
 idtac "Possible points: 1".
 check_type @discriminate_ex3 (
-(forall (X : Type) (x y z : X) (l : list X),
- list X -> x :: y :: l = [ ] -> x = z)).
+(forall (X : Type) (x y z : X) (l _ : list X)
+   (_ : @eq (list X) (@cons X x (@cons X y l)) (@nil X)),
+ @eq X x z)).
 idtac "Assumptions:".
 Abort.
 Print Assumptions discriminate_ex3.
-Goal True.
-idtac " ".
-
-idtac "-------------------  plus_n_n_injective  --------------------".
-idtac " ".
-
-idtac "#> plus_n_n_injective".
-idtac "Possible points: 3".
-check_type @plus_n_n_injective ((forall n m : nat, n + n = m + m -> n = m)).
-idtac "Assumptions:".
-Abort.
-Print Assumptions plus_n_n_injective.
 Goal True.
 idtac " ".
 
@@ -89,7 +82,7 @@ idtac " ".
 
 idtac "#> eqb_true".
 idtac "Possible points: 2".
-check_type @eqb_true ((forall n m : nat, (n =? m) = true -> n = m)).
+check_type @eqb_true ((forall (n m : nat) (_ : @eq bool (eqb n m) true), @eq nat n m)).
 idtac "Assumptions:".
 Abort.
 Print Assumptions eqb_true.
@@ -105,17 +98,47 @@ idtac "Possible points: 2".
 print_manual_grade manual_grade_for_informal_proof.
 idtac " ".
 
+idtac "-------------------  plus_n_n_injective  --------------------".
+idtac " ".
+
+idtac "#> plus_n_n_injective".
+idtac "Possible points: 3".
+check_type @plus_n_n_injective (
+(forall (n m : nat) (_ : @eq nat (Nat.add n n) (Nat.add m m)), @eq nat n m)).
+idtac "Assumptions:".
+Abort.
+Print Assumptions plus_n_n_injective.
+Goal True.
+idtac " ".
+
 idtac "-------------------  gen_dep_practice  --------------------".
 idtac " ".
 
 idtac "#> nth_error_after_last".
 idtac "Possible points: 3".
 check_type @nth_error_after_last (
-(forall (n : nat) (X : Type) (l : list X),
- @length X l = n -> @nth_error X l n = @None X)).
+(forall (n : nat) (X : Type) (l : list X) (_ : @eq nat (@length X l) n),
+ @eq (option X) (@nth_error X l n) (@None X))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions nth_error_after_last.
+Goal True.
+idtac " ".
+
+idtac "-------------------  combine_split  --------------------".
+idtac " ".
+
+idtac "#> combine_split".
+idtac "Possible points: 3".
+check_type @combine_split (
+(forall (X Y : Type) (l : list (prod X Y)) (l1 : list X)
+   (l2 : list Y)
+   (_ : @eq (prod (list X) (list Y)) (@split X Y l)
+          (@pair (list X) (list Y) l1 l2)),
+ @eq (list (prod X Y)) (@combine X Y l1 l2) l)).
+idtac "Assumptions:".
+Abort.
+Print Assumptions combine_split.
 Goal True.
 idtac " ".
 
@@ -125,7 +148,7 @@ idtac " ".
 idtac "#> bool_fn_applied_thrice".
 idtac "Possible points: 2".
 check_type @bool_fn_applied_thrice (
-(forall (f : bool -> bool) (b : bool), f (f (f b)) = f b)).
+(forall (f : forall _ : bool, bool) (b : bool), @eq bool (f (f (f b))) (f b))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions bool_fn_applied_thrice.
@@ -137,7 +160,7 @@ idtac " ".
 
 idtac "#> eqb_sym".
 idtac "Possible points: 3".
-check_type @eqb_sym ((forall n m : nat, (n =? m) = (m =? n))).
+check_type @eqb_sym ((forall n m : nat, @eq bool (eqb n m) (eqb m n))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions eqb_sym.
@@ -160,8 +183,9 @@ idtac "#> filter_exercise".
 idtac "Advanced".
 idtac "Possible points: 3".
 check_type @filter_exercise (
-(forall (X : Type) (test : X -> bool) (x : X) (l lf : list X),
- @filter X test l = x :: lf -> test x = true)).
+(forall (X : Type) (test : forall _ : X, bool) (x : X)
+   (l lf : list X) (_ : @eq (list X) (@filter X test l) (@cons X x lf)),
+ @eq bool (test x) true)).
 idtac "Assumptions:".
 Abort.
 Print Assumptions filter_exercise.
@@ -173,10 +197,10 @@ idtac " ".
 
 idtac "#> existsb_existsb'".
 idtac "Advanced".
-idtac "Possible points: 4".
+idtac "Possible points: 6".
 check_type @existsb_existsb' (
-(forall (X : Type) (test : X -> bool) (l : list X),
- @existsb X test l = @existsb' X test l)).
+(forall (X : Type) (test : forall _ : X, bool) (l : list X),
+ @eq bool (@existsb X test l) (@existsb' X test l))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions existsb_existsb'.
@@ -185,10 +209,29 @@ idtac " ".
 
 idtac " ".
 
-idtac "Max points - standard: 18".
-idtac "Max points - advanced: 30".
+idtac "Max points - standard: 22".
+idtac "Max points - advanced: 36".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "plus_le".
+idtac "le_trans".
+idtac "le_plus_l".
+idtac "add_le_cases".
+idtac "Sn_le_Sm__n_le_m".
+idtac "O_le_n".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
+idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
 idtac "".
 idtac "********** Standard **********".
 idtac "---------- rev_exercise1 ---------".
@@ -197,12 +240,14 @@ idtac "---------- injection_ex3 ---------".
 Print Assumptions injection_ex3.
 idtac "---------- discriminate_ex3 ---------".
 Print Assumptions discriminate_ex3.
-idtac "---------- plus_n_n_injective ---------".
-Print Assumptions plus_n_n_injective.
 idtac "---------- eqb_true ---------".
 Print Assumptions eqb_true.
+idtac "---------- plus_n_n_injective ---------".
+Print Assumptions plus_n_n_injective.
 idtac "---------- nth_error_after_last ---------".
 Print Assumptions nth_error_after_last.
+idtac "---------- combine_split ---------".
+Print Assumptions combine_split.
 idtac "---------- bool_fn_applied_thrice ---------".
 Print Assumptions bool_fn_applied_thrice.
 idtac "---------- eqb_sym ---------".
@@ -219,4 +264,6 @@ idtac "---------- existsb_existsb' ---------".
 Print Assumptions existsb_existsb'.
 Abort.
 
-(* Wed Jan 9 12:02:11 EST 2019 *)
+(* 2025-09-05 10:04 *)
+
+(* 2025-09-05 10:04 *)

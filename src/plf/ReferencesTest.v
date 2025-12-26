@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From PLF Require Import References.
 
 Parameter MISSING: Type.
@@ -51,17 +51,48 @@ idtac " ".
 idtac "-------------------  cyclic_store  --------------------".
 idtac " ".
 
-idtac "#> Manually graded: STLCRef.cyclic_store".
-idtac "Possible points: 2".
-print_manual_grade STLCRef.manual_grade_for_cyclic_store.
+idtac "#> STLCRef.cyclic_store".
+idtac "Possible points: 3".
+check_type @STLCRef.cyclic_store (
+(@ex STLCRef.tm
+   (fun t : STLCRef.tm =>
+    STLCRef.multistep
+      (@pair STLCRef.tm (list STLCRef.tm) t (@nil STLCRef.tm))
+      (@pair STLCRef.tm (list STLCRef.tm) STLCRef.tm_unit
+         (@cons STLCRef.tm
+            (STLCRef.tm_abs STLCRef.x STLCRef.Ty_Nat
+               (STLCRef.tm_app (STLCRef.tm_deref (STLCRef.tm_loc 1))
+                  (STLCRef.tm_var STLCRef.x)))
+            (@cons STLCRef.tm
+               (STLCRef.tm_abs STLCRef.x STLCRef.Ty_Nat
+                  (STLCRef.tm_app (STLCRef.tm_deref (STLCRef.tm_loc 0))
+                     (STLCRef.tm_var STLCRef.x)))
+               (@nil STLCRef.tm))))))).
+idtac "Assumptions:".
+Abort.
+Print Assumptions STLCRef.cyclic_store.
+Goal True.
 idtac " ".
 
 idtac "-------------------  store_not_unique  --------------------".
 idtac " ".
 
-idtac "#> Manually graded: STLCRef.store_not_unique".
-idtac "Possible points: 2".
-print_manual_grade STLCRef.manual_grade_for_store_not_unique.
+idtac "#> STLCRef.store_not_unique".
+idtac "Possible points: 3".
+check_type @STLCRef.store_not_unique (
+(@ex STLCRef.store
+   (fun st : STLCRef.store =>
+    @ex STLCRef.store_ty
+      (fun ST1 : STLCRef.store_ty =>
+       @ex STLCRef.store_ty
+         (fun ST2 : STLCRef.store_ty =>
+          and (STLCRef.store_well_typed ST1 st)
+            (and (STLCRef.store_well_typed ST2 st)
+               (not (@eq STLCRef.store_ty ST1 ST2)))))))).
+idtac "Assumptions:".
+Abort.
+Print Assumptions STLCRef.store_not_unique.
+Goal True.
 idtac " ".
 
 idtac "-------------------  preservation_informal  --------------------".
@@ -76,7 +107,7 @@ idtac "-------------------  factorial_ref  --------------------".
 idtac " ".
 
 idtac "#> STLCRef.RefsAndNontermination.factorial".
-idtac "Possible points: 2".
+idtac "Possible points: 3".
 check_type @STLCRef.RefsAndNontermination.factorial (STLCRef.tm).
 idtac "Assumptions:".
 Abort.
@@ -85,11 +116,11 @@ Goal True.
 idtac " ".
 
 idtac "#> STLCRef.RefsAndNontermination.factorial_type".
-idtac "Possible points: 2".
+idtac "Possible points: 3".
 check_type @STLCRef.RefsAndNontermination.factorial_type (
-(STLCRef.has_type (@Maps.empty STLCRef.ty) (@nil STLCRef.ty)
+(STLCRef.has_type (@nil STLCRef.ty) (@Maps.empty STLCRef.ty)
    STLCRef.RefsAndNontermination.factorial
-   (STLCRef.Arrow STLCRef.Nat STLCRef.Nat))).
+   (STLCRef.Ty_Arrow STLCRef.Ty_Nat STLCRef.Ty_Nat))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions STLCRef.RefsAndNontermination.factorial_type.
@@ -98,20 +129,36 @@ idtac " ".
 
 idtac " ".
 
-idtac "Max points - standard: 15".
-idtac "Max points - advanced: 15".
+idtac "Max points - standard: 19".
+idtac "Max points - advanced: 19".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "CSeq_congruence".
+idtac "fold_constants_bexp_sound".
+idtac "succ_hastype_nat__hastype_nat".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
+idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
 idtac "".
 idtac "********** Standard **********".
 idtac "---------- compact_update ---------".
 idtac "MANUAL".
 idtac "---------- type_safety_violation ---------".
 idtac "MANUAL".
-idtac "---------- cyclic_store ---------".
-idtac "MANUAL".
-idtac "---------- store_not_unique ---------".
-idtac "MANUAL".
+idtac "---------- STLCRef.cyclic_store ---------".
+Print Assumptions STLCRef.cyclic_store.
+idtac "---------- STLCRef.store_not_unique ---------".
+Print Assumptions STLCRef.store_not_unique.
 idtac "---------- preservation_informal ---------".
 idtac "MANUAL".
 idtac "---------- STLCRef.RefsAndNontermination.factorial ---------".
@@ -122,6 +169,6 @@ idtac "".
 idtac "********** Advanced **********".
 Abort.
 
-(* Thu Feb 7 20:08:42 EST 2019 *)
+(* 2025-08-24 14:29 *)
 
-(* Thu Feb 7 20:09:29 EST 2019 *)
+(* 2025-08-24 14:29 *)

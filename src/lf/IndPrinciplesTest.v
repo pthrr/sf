@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From LF Require Import IndPrinciples.
 
 Parameter MISSING: Type.
@@ -32,16 +32,87 @@ Import Check.
 
 Goal True.
 
+idtac "-------------------  plus_one_r'  --------------------".
 idtac " ".
 
-idtac "Max points - standard: 0".
-idtac "Max points - advanced: 0".
+idtac "#> plus_one_r'".
+idtac "Possible points: 2".
+check_type @plus_one_r' ((forall n : nat, @eq nat (Nat.add n 1) (S n))).
+idtac "Assumptions:".
+Abort.
+Print Assumptions plus_one_r'.
+Goal True.
+idtac " ".
+
+idtac "-------------------  booltree_ind  --------------------".
+idtac " ".
+
+idtac "#> booltree_ind_type_correct".
+idtac "Possible points: 2".
+check_type @booltree_ind_type_correct (booltree_ind_type).
+idtac "Assumptions:".
+Abort.
+Print Assumptions booltree_ind_type_correct.
+Goal True.
+idtac " ".
+
+idtac "-------------------  toy_ind  --------------------".
+idtac " ".
+
+idtac "#> Toy_correct".
+idtac "Possible points: 2".
+check_type @Toy_correct (
+(@ex (forall _ : bool, Toy)
+   (fun f : forall _ : bool, Toy =>
+    @ex (forall (_ : nat) (_ : Toy), Toy)
+      (fun g : forall (_ : nat) (_ : Toy), Toy =>
+       forall (P : forall _ : Toy, Prop) (_ : forall b : bool, P (f b))
+         (_ : forall (n : nat) (t : Toy) (_ : P t), P (g n t))
+         (t : Toy),
+       P t)))).
+idtac "Assumptions:".
+Abort.
+Print Assumptions Toy_correct.
+Goal True.
+idtac " ".
+
+idtac " ".
+
+idtac "Max points - standard: 6".
+idtac "Max points - advanced: 6".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "plus_le".
+idtac "le_trans".
+idtac "le_plus_l".
+idtac "add_le_cases".
+idtac "Sn_le_Sm__n_le_m".
+idtac "O_le_n".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
 idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
+idtac "".
 idtac "********** Standard **********".
+idtac "---------- plus_one_r' ---------".
+Print Assumptions plus_one_r'.
+idtac "---------- booltree_ind_type_correct ---------".
+Print Assumptions booltree_ind_type_correct.
+idtac "---------- Toy_correct ---------".
+Print Assumptions Toy_correct.
 idtac "".
 idtac "********** Advanced **********".
 Abort.
 
-(* Wed Jan 9 12:02:19 EST 2019 *)
+(* 2025-09-05 10:04 *)
+
+(* 2025-09-05 10:04 *)

@@ -1,0 +1,143 @@
+--- Hoare.v.orig	2025-12-26 00:00:00.000000000 +0100
++++ Hoare.v	2025-12-26 00:00:00.000000000 +0100
+@@ -545,7 +545,7 @@
+         X := 3
+       {{ X = 3 }}
+
+-      {{ (0 <= X /\ X <= 5) [X |-> 3]  (that is, 0 <= 3 /\ 3 <= 5)
++      {{ (0 <= X /\ X <= 5) [X |-> 3] }}  (that is, 0 <= 3 /\ 3 <= 5)
+         X := 3
+       {{ 0 <= X /\ X <= 5 }}
+ *)
+--- _CoqProject.orig	2025-12-26 00:00:00.000000000 +0100
++++ _CoqProject	2025-12-26 00:00:00.000000000 +0100
+@@ -1 +1,25 @@
+ -Q . PLF
++Preface.v
++Equiv.v
++Hoare.v
++Hoare2.v
++HoareAsLogic.v
++Imp.v
++LibTactics.v
++Maps.v
++MoreStlc.v
++Norm.v
++PE.v
++Postscript.v
++RecordSub.v
++Records.v
++References.v
++Smallstep.v
++Stlc.v
++StlcProp.v
++Sub.v
++Typechecking.v
++Types.v
++UseAuto.v
++UseTactics.v
++Bib.v
+--- Makefile.coq.orig	2025-12-26 00:00:00.000000000 +0100
++++ Makefile.coq	2025-12-26 00:00:00.000000000 +0100
+@@ -543,3 +543,3 @@
+ 		-toc $(COQDOCFLAGS) -pdf $(GAL) $(COQDOCLIBS) \
+-		-o $@ `$(COQDEP) -sort $(VFILES)`
++		-o $@ Preface.v Equiv.v Hoare.v Hoare2.v HoareAsLogic.v Imp.v LibTactics.v Maps.v MoreStlc.v Norm.v PE.v Postscript.v RecordSub.v Records.v References.v Smallstep.v Stlc.v StlcProp.v Sub.v Typechecking.v Types.v UseAuto.v UseTactics.v Bib.v
+
+--- Postscript.v.orig	2025-12-26 00:00:00.000000000 +0100
++++ Postscript.v	2025-12-26 00:00:00.000000000 +0100
+@@ -38,19 +38,15 @@
+      - _Foundations of programming languages_
+
+            - notations and definitional techniques for precisely specifying
+-                - abstract syntax
+-                - operational semantics
+-                    - big-step style
+-                    - small-step style
+-                - type systems
++             abstract syntax, operational semantics (big-step and
++             small-step style), and type systems
+
+            - program equivalence
+
+            - Hoare logic
+
+            - fundamental metatheory of type systems
+-
+-              - progress and preservation
++             (progress and preservation)
+
+            - theory of subtyping
+ *)
+
+--- UseAuto.v.orig	2025-12-26 00:00:00.000000000 +0100
++++ UseAuto.v	2025-12-26 00:00:00.000000000 +0100
+@@ -527,37 +527,39 @@
+
+    |5||4||3||2||1||0| -- below, tabulation indicates the depth
+
+-    [P 2]
+-    -> [P 3]
+-       -> [P 4]
+-          -> [P 5]
+-             -> [P 6]
+-                -> [P 7]
+-                -> [P 5]
+-             -> [P 4]
+-                -> [P 5]
+-                -> [P 3]
+-          --> [P 3]
+-             -> [P 4]
+-                -> [P 5]
+-                -> [P 3]
+-             -> [P 2]
+-                -> [P 3]
+-                -> [P 1]
+-       -> [P 2]
+-          -> [P 3]
+-             -> [P 4]
+-                -> [P 5]
+-                -> [P 3]
+-             -> [P 2]
+-                -> [P 3]
+-                -> [P 1]
+-          -> [P 1]
+-             -> [P 2]
+-                -> [P 3]
+-                -> [P 1]
+-             -> [P 0]
+-                -> !! Done !!
++<<
++[P 2]
++-> [P 3]
++   -> [P 4]
++      -> [P 5]
++         -> [P 6]
++            -> [P 7]
++            -> [P 5]
++         -> [P 4]
++            -> [P 5]
++            -> [P 3]
++      --> [P 3]
++         -> [P 4]
++            -> [P 5]
++            -> [P 3]
++         -> [P 2]
++            -> [P 3]
++            -> [P 1]
++   -> [P 2]
++      -> [P 3]
++         -> [P 4]
++            -> [P 5]
++            -> [P 3]
++         -> [P 2]
++            -> [P 3]
++            -> [P 1]
++      -> [P 1]
++         -> [P 2]
++            -> [P 3]
++            -> [P 1]
++         -> [P 0]
++            -> !! Done !!
++>>
+

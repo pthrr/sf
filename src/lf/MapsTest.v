@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From LF Require Import Maps.
 
 Parameter MISSING: Type.
@@ -38,7 +38,8 @@ idtac " ".
 idtac "#> t_update_same".
 idtac "Possible points: 2".
 check_type @t_update_same (
-(forall (A : Type) (m : total_map A) (x : string), (x !-> m x; m) = m)).
+(forall (A : Type) (m : total_map A) (x : string),
+ @eq (forall _ : string, A) (@t_update A m x (m x)) m)).
 idtac "Assumptions:".
 Abort.
 Print Assumptions t_update_same.
@@ -51,8 +52,10 @@ idtac " ".
 idtac "#> t_update_permute".
 idtac "Possible points: 3".
 check_type @t_update_permute (
-(forall (A : Type) (m : total_map A) (v1 v2 : A) (x1 x2 : string),
- x2 <> x1 -> (x1 !-> v1; x2 !-> v2; m) = (x2 !-> v2; x1 !-> v1; m))).
+(forall (A : Type) (m : total_map A) (v1 v2 : A) (x1 x2 : string)
+   (_ : not (@eq string x2 x1)),
+ @eq (forall _ : string, A) (@t_update A (@t_update A m x2 v2) x1 v1)
+   (@t_update A (@t_update A m x1 v1) x2 v2))).
 idtac "Assumptions:".
 Abort.
 Print Assumptions t_update_permute.
@@ -64,7 +67,26 @@ idtac " ".
 idtac "Max points - standard: 5".
 idtac "Max points - advanced: 5".
 idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "plus_le".
+idtac "le_trans".
+idtac "le_plus_l".
+idtac "add_le_cases".
+idtac "Sn_le_Sm__n_le_m".
+idtac "O_le_n".
+idtac "".
+idtac "".
 idtac "********** Summary **********".
+idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
 idtac "".
 idtac "********** Standard **********".
 idtac "---------- t_update_same ---------".
@@ -75,4 +97,6 @@ idtac "".
 idtac "********** Advanced **********".
 Abort.
 
-(* Wed Jan 9 12:02:17 EST 2019 *)
+(* 2025-08-24 13:39 *)
+
+(* 2025-08-24 13:39 *)

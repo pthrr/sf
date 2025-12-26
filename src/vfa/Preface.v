@@ -8,7 +8,7 @@
       (the Gallina language embedded in Coq's logic).
  - Prove it correct in Coq.
  - Compile it with an optimizing ML compiler.
- 
+
  Since you want your programs to be _efficient_, you'll want to
  implement sophisticated data structures and algorithms.  Since
  Gallina is a _purely functional_ language, it helps to have
@@ -50,12 +50,12 @@
 
     In this volume, the core path is:
 
-    [Preface] -> [Perm] -> [Sort] -> [SearchTree] -> [Redblack]
+    [Preface] -> [Perm] -> [Sort] -> [SearchTree] -> [Extract] -> [Redblack]
 
     with many optional chapters whose dependencies are,
 
     - [Sort] -> [Multiset] or [Selection] or [Decide]
-    - [SearchTree] -> [ADT] or [Extract]
+    - [SearchTree] -> [ADT]
     - [Perm] -> [Trie]
     - [Sort] -> [Selection] -> [SearchTree] -> [ADT] -> [Priqueue] -> [Binom]
 
@@ -69,7 +69,7 @@
 
 (** Coq runs on Windows, Linux, and OS X.  The Preface of Volume 1
     describes the Coq installation you will need.  This edition was
-    built with Coq 8.8.0.
+    built with Coq 9.0.0.
 
     In addition, two of the chapters ask you to compile and run an
     OCaml program; having OCaml installed on your computer is helpful,
@@ -101,7 +101,7 @@
     readers.  Advanced exercises are for readers who want an extra
     challenge (and, in return, a deeper contact with the material).
 
-    _Please do not post solutions to the exercises in any public place_: 
+    _Please do not post solutions to the exercises in any public place_:
     Software Foundations is widely used both for self-study and for
     university courses.  Having solutions easily available makes it
     much less useful for courses, which typically have graded homework
@@ -115,7 +115,7 @@
 
 (** A tar file containing the full sources for the "release version"
     of this book (as a collection of Coq scripts and HTML files) is
-    available at http://softwarefoundations.cis.upenn.edu.
+    available at {https://softwarefoundations.cis.upenn.edu}.
 
     (If you are using the book as part of a class, your professor may
     give you access to a locally modified version of the files, which
@@ -126,7 +126,7 @@
 
 (** Lectures on for an intensive summer course based on some chapters
     of this book at the DeepSpec summer school in 2017 can be
-    found at https://deepspec.org/event/dsss17/lecture_appel.html. *)
+    found at {https://deepspec.org/event/dsss17/lecture_appel.html}. *)
 
 (* ================================================================= *)
 (** ** For Instructors and Contributors *)
@@ -136,6 +136,24 @@
     Your contributions are welcome!  Please see the [Preface]
     to _Logical Foundations_ for instructions. *)
 
+(* ================================================================= *)
+(** ** Recommended Citation Format *)
+
+(** If you want to refer to this volume in your own writing, please
+    do so as follows:
+
+    @book            {Appel:SF3,
+    author       =   {Andrew W. Appel},
+    editor       =   {Benjamin C. Pierce},
+    title        =   "Verified Functional Algorithms",
+    series       =   "Software Foundations",
+    volume       =   "3",
+    year         =   "2025",
+    publisher    =   "Electronic textbook",
+    note         =   {Version 1.5.5, \URL{http://softwarefoundations.cis.upenn.edu} },
+    }
+*)
+
 (* ################################################################# *)
 (** * Thanks *)
 
@@ -144,3 +162,4 @@
     NSF Expeditions grant 1521523, _The Science of Deep
     Specification_. *)
 
+(* 2025-08-20 18:12 *)

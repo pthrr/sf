@@ -1,5 +1,5 @@
 Set Warnings "-notation-overridden,-parsing".
-From Coq Require Export String.
+From Stdlib Require Export String.
 From PLF Require Import HoareAsLogic.
 
 Parameter MISSING: Type.
@@ -32,81 +32,137 @@ Import Check.
 
 Goal True.
 
-idtac "-------------------  hoare_proof_sound  --------------------".
+idtac "-------------------  provable_true_post  --------------------".
 idtac " ".
 
-idtac "#> hoare_proof_sound".
+idtac "#> provable_true_post".
+idtac "Possible points: 3".
+check_type @provable_true_post (
+(forall (c : Imp.com) (P : Hoare.Assertion),
+ derivable P c (Hoare.assert_of_Prop True))).
+idtac "Assumptions:".
+Abort.
+Print Assumptions provable_true_post.
+Goal True.
+idtac " ".
+
+idtac "-------------------  provable_false_pre  --------------------".
+idtac " ".
+
+idtac "#> provable_false_pre".
+idtac "Possible points: 3".
+check_type @provable_false_pre (
+(forall (c : Imp.com) (Q : Hoare.Assertion),
+ derivable (Hoare.assert_of_Prop False) c Q)).
+idtac "Assumptions:".
+Abort.
+Print Assumptions provable_false_pre.
+Goal True.
+idtac " ".
+
+idtac "-------------------  hoare_sound  --------------------".
+idtac " ".
+
+idtac "#> hoare_sound".
+idtac "Possible points: 3".
+check_type @hoare_sound (
+(forall (P : Hoare.Assertion) (c : Imp.com) (Q : Hoare.Assertion)
+   (_ : derivable P c Q),
+ valid P c Q)).
+idtac "Assumptions:".
+Abort.
+Print Assumptions hoare_sound.
+Goal True.
+idtac " ".
+
+idtac "-------------------  wp_seq  --------------------".
+idtac " ".
+
+idtac "#> wp_seq".
+idtac "Possible points: 1".
+check_type @wp_seq (
+(forall (P Q : Hoare.Assertion) (c1 c2 : Imp.com)
+   (_ : derivable P c1 (wp c2 Q)) (_ : derivable (wp c2 Q) c2 Q),
+ derivable P (Imp.CSeq c1 c2) Q)).
+idtac "Assumptions:".
+Abort.
+Print Assumptions wp_seq.
+Goal True.
+idtac " ".
+
+idtac "-------------------  wp_invariant  --------------------".
+idtac " ".
+
+idtac "#> wp_invariant".
 idtac "Possible points: 2".
-check_type @hoare_proof_sound (
-(forall (P : Hoare.Assertion) (c : Imp.com) (Q : Hoare.Assertion),
- hoare_proof P c Q -> Hoare.hoare_triple P c Q)).
+check_type @wp_invariant (
+(forall (b : Imp.bexp) (c : Imp.com) (Q : Hoare.Assertion),
+ valid
+   (fun st : Imp.state =>
+    and ((wp (Imp.CWhile b c) Q : Hoare.Assertion) st)
+      ((Hoare.bassertion b : Hoare.Assertion) st))
+   c (wp (Imp.CWhile b c) Q))).
 idtac "Assumptions:".
 Abort.
-Print Assumptions hoare_proof_sound.
+Print Assumptions wp_invariant.
 Goal True.
 idtac " ".
 
-idtac "-------------------  wp_is_precondition  --------------------".
+idtac "-------------------  hoare_complete  --------------------".
 idtac " ".
 
-idtac "#> wp_is_precondition".
-idtac "Possible points: 1".
-check_type @wp_is_precondition (
-(forall (c : Imp.com) (Q : Hoare.Assertion), Hoare.hoare_triple (wp c Q) c Q)).
+idtac "#> hoare_complete".
+idtac "Possible points: 6".
+check_type @hoare_complete (
+(forall (P : Hoare.Assertion) (c : Imp.com) (Q : Hoare.Assertion)
+   (_ : valid P c Q),
+ derivable P c Q)).
 idtac "Assumptions:".
 Abort.
-Print Assumptions wp_is_precondition.
-Goal True.
-idtac " ".
-
-idtac "-------------------  wp_is_weakest  --------------------".
-idtac " ".
-
-idtac "#> wp_is_weakest".
-idtac "Possible points: 1".
-check_type @wp_is_weakest (
-(forall (c : Imp.com) (Q P' : Hoare.Assertion),
- Hoare.hoare_triple P' c Q -> forall st : Imp.state, P' st -> wp c Q st)).
-idtac "Assumptions:".
-Abort.
-Print Assumptions wp_is_weakest.
-Goal True.
-idtac " ".
-
-idtac "-------------------  hoare_proof_complete  --------------------".
-idtac " ".
-
-idtac "#> hoare_proof_complete".
-idtac "Possible points: 5".
-check_type @hoare_proof_complete (
-(forall (P : Hoare.Assertion) (c : Imp.com) (Q : Hoare.Assertion),
- Hoare.hoare_triple P c Q -> hoare_proof P c Q)).
-idtac "Assumptions:".
-Abort.
-Print Assumptions hoare_proof_complete.
+Print Assumptions hoare_complete.
 Goal True.
 idtac " ".
 
 idtac " ".
 
-idtac "Max points - standard: 9".
-idtac "Max points - advanced: 9".
+idtac "Max points - standard: 18".
+idtac "Max points - advanced: 18".
+idtac "".
+idtac "Allowed Axioms:".
+idtac "functional_extensionality".
+idtac "FunctionalExtensionality.functional_extensionality_dep".
+idtac "CSeq_congruence".
+idtac "fold_constants_bexp_sound".
+idtac "succ_hastype_nat__hastype_nat".
+idtac "".
 idtac "".
 idtac "********** Summary **********".
 idtac "".
+idtac "Below is a summary of the automatically graded exercises that are incomplete.".
+idtac "".
+idtac "The output for each exercise can be any of the following:".
+idtac "  - 'Closed under the global context', if it is complete".
+idtac "  - 'MANUAL', if it is manually graded".
+idtac "  - A list of pending axioms, containing unproven assumptions. In this case".
+idtac "    the exercise is considered complete, if the axioms are all allowed.".
+idtac "".
 idtac "********** Standard **********".
-idtac "---------- hoare_proof_sound ---------".
-Print Assumptions hoare_proof_sound.
-idtac "---------- wp_is_precondition ---------".
-Print Assumptions wp_is_precondition.
-idtac "---------- wp_is_weakest ---------".
-Print Assumptions wp_is_weakest.
-idtac "---------- hoare_proof_complete ---------".
-Print Assumptions hoare_proof_complete.
+idtac "---------- provable_true_post ---------".
+Print Assumptions provable_true_post.
+idtac "---------- provable_false_pre ---------".
+Print Assumptions provable_false_pre.
+idtac "---------- hoare_sound ---------".
+Print Assumptions hoare_sound.
+idtac "---------- wp_seq ---------".
+Print Assumptions wp_seq.
+idtac "---------- wp_invariant ---------".
+Print Assumptions wp_invariant.
+idtac "---------- hoare_complete ---------".
+Print Assumptions hoare_complete.
 idtac "".
 idtac "********** Advanced **********".
 Abort.
 
-(* Thu Feb 7 20:08:09 EST 2019 *)
+(* 2025-08-24 14:29 *)
 
-(* Thu Feb 7 20:09:28 EST 2019 *)
+(* 2025-08-24 14:29 *)
