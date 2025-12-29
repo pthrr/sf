@@ -43,30 +43,37 @@ doc/pdf/slf.pdf: src/slf/all.pdf
 	mv src/slf/all.pdf doc/pdf/slf.pdf
 
 src/vc/all.pdf:
+	make -C src/vc Makefile.coq
 	-patch -N -d src/vc < src/vc.patch
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/vc/Makefile.coq
 	make -C src/vc all.pdf
 
 src/lf/all.pdf:
 	make -C src/lf all
 	-patch -N -d src/lf < src/lf.patch
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/lf/Makefile.coq
 	make -C src/lf all.pdf
 
 src/plf/all.pdf:
 	make -C src/plf all
 	-patch -N -d src/plf < src/plf.patch
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/plf/Makefile.coq
 	make -C src/plf all.pdf
 
 src/vfa/all.pdf:
 	make -C src/vfa all
 	-patch -N -d src/vfa < src/vfa.patch
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/vfa/Makefile.coq
 	make -C src/vfa all.pdf
 
 src/qc/all.pdf:
 	make -C src/qc all
 	-patch -N -d src/qc < src/qc.patch
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/qc/Makefile.coq
 	make -C src/qc all.pdf
 
 src/slf/all.pdf:
 	make -C src/slf build
 	-patch -N -d src/slf < src/slf.patch
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/slf/Makefile.coq
 	make -C src/slf -f Makefile.coq all.pdf
