@@ -27,19 +27,7 @@
             coqPackages.coq-elpi
             coqPackages.simple-io
 
-            (texlive.combine {
-              inherit (texlive) scheme-basic
-                ucs
-                wasysym
-                tipa
-                preprint
-                xcolor
-                hyperref
-                oberdiek
-                enumitem
-                metafont
-                ;
-            })
+            tectonic
 
             gnumake
           ];
@@ -49,7 +37,7 @@
             unset COQPATH
             echo "Coq version: $(coqc --version | head -n 1)"
             echo "Rocq version: $(rocq --version | head -n 1)"
-            echo "LaTeX version: $(pdflatex --version | head -n 1)"
+            echo "Tectonic version: $(tectonic --version)"
             echo "ROCQPATH: $ROCQPATH"
           '';
         };

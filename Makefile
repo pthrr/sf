@@ -45,35 +45,59 @@ doc/pdf/slf.pdf: src/slf/all.pdf
 src/vc/all.pdf:
 	make -C src/vc Makefile.coq
 	-patch -N -d src/vc < src/vc.patch
-	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/vc/Makefile.coq
-	make -C src/vc all.pdf
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -latex/g' src/vc/Makefile.coq
+	sed -i 's/all\.pdf:/all.tex:/g' src/vc/Makefile.coq
+	make -C src/vc all.tex
+	printf '\\setcounter{tocdepth}{2}\n\\renewcommand{\\thesection}{\\arabic{section}}\n\\renewcommand{\\thesubsection}{\\thesection.\\arabic{subsection}}\n' | sed -i '/\\begin{document}/r /dev/stdin' src/vc/all.tex
+	sed -i -E 's/\\[{](https?:\/\/[^}\\]+)\\[}]/\\url{\1}/g' src/vc/all.tex
+	cd src/vc && tectonic -X compile all.tex
 
 src/lf/all.pdf:
 	make -C src/lf all
 	-patch -N -d src/lf < src/lf.patch
-	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/lf/Makefile.coq
-	make -C src/lf all.pdf
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -latex/g' src/lf/Makefile.coq
+	sed -i 's/all\.pdf:/all.tex:/g' src/lf/Makefile.coq
+	make -C src/lf all.tex
+	printf '\\setcounter{tocdepth}{2}\n\\renewcommand{\\thesection}{\\arabic{section}}\n\\renewcommand{\\thesubsection}{\\thesection.\\arabic{subsection}}\n' | sed -i '/\\begin{document}/r /dev/stdin' src/lf/all.tex
+	sed -i -E 's/\\[{](https?:\/\/[^}\\]+)\\[}]/\\url{\1}/g' src/lf/all.tex
+	cd src/lf && tectonic -X compile all.tex
 
 src/plf/all.pdf:
 	make -C src/plf all
 	-patch -N -d src/plf < src/plf.patch
-	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/plf/Makefile.coq
-	make -C src/plf all.pdf
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -latex/g' src/plf/Makefile.coq
+	sed -i 's/all\.pdf:/all.tex:/g' src/plf/Makefile.coq
+	make -C src/plf all.tex
+	printf '\\setcounter{tocdepth}{2}\n\\renewcommand{\\thesection}{\\arabic{section}}\n\\renewcommand{\\thesubsection}{\\thesection.\\arabic{subsection}}\n' | sed -i '/\\begin{document}/r /dev/stdin' src/plf/all.tex
+	sed -i -E 's/\\[{](https?:\/\/[^}\\]+)\\[}]/\\url{\1}/g' src/plf/all.tex
+	cd src/plf && tectonic -X compile all.tex
 
 src/vfa/all.pdf:
 	make -C src/vfa all
 	-patch -N -d src/vfa < src/vfa.patch
-	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/vfa/Makefile.coq
-	make -C src/vfa all.pdf
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -latex/g' src/vfa/Makefile.coq
+	sed -i 's/all\.pdf:/all.tex:/g' src/vfa/Makefile.coq
+	make -C src/vfa all.tex
+	printf '\\setcounter{tocdepth}{2}\n\\renewcommand{\\thesection}{\\arabic{section}}\n\\renewcommand{\\thesubsection}{\\thesection.\\arabic{subsection}}\n' | sed -i '/\\begin{document}/r /dev/stdin' src/vfa/all.tex
+	sed -i -E 's/\\[{](https?:\/\/[^}\\]+)\\[}]/\\url{\1}/g' src/vfa/all.tex
+	cd src/vfa && tectonic -X compile all.tex
 
 src/qc/all.pdf:
 	make -C src/qc all
 	-patch -N -d src/qc < src/qc.patch
-	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/qc/Makefile.coq
-	make -C src/qc all.pdf
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -latex/g' src/qc/Makefile.coq
+	sed -i 's/all\.pdf:/all.tex:/g' src/qc/Makefile.coq
+	make -C src/qc all.tex
+	printf '\\setcounter{tocdepth}{2}\n\\renewcommand{\\thesection}{\\arabic{section}}\n\\renewcommand{\\thesubsection}{\\thesection.\\arabic{subsection}}\n' | sed -i '/\\begin{document}/r /dev/stdin' src/qc/all.tex
+	sed -i -E 's/\\[{](https?:\/\/[^}\\]+)\\[}]/\\url{\1}/g' src/qc/all.tex
+	cd src/qc && tectonic -X compile all.tex
 
 src/slf/all.pdf:
 	make -C src/slf build
 	-patch -N -d src/slf < src/slf.patch
-	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -pdf/g' src/slf/Makefile.coq
-	make -C src/slf -f Makefile.coq all.pdf
+	sed -i 's/-toc $$(COQDOCFLAGS) -pdf/-toc --no-lib-name -s $$(COQDOCFLAGS) -latex/g' src/slf/Makefile.coq
+	sed -i 's/all\.pdf:/all.tex:/g' src/slf/Makefile.coq
+	make -C src/slf -f Makefile.coq all.tex
+	printf '\\setcounter{tocdepth}{2}\n\\renewcommand{\\thesection}{\\arabic{section}}\n\\renewcommand{\\thesubsection}{\\thesection.\\arabic{subsection}}\n' | sed -i '/\\begin{document}/r /dev/stdin' src/slf/all.tex
+	sed -i -E 's/\\[{](https?:\/\/[^}\\]+)\\[}]/\\url{\1}/g' src/slf/all.tex
+	cd src/slf && tectonic -X compile all.tex

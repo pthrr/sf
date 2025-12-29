@@ -4,8 +4,9 @@
       "Bash(nix develop:*)",
       "Bash(cat:*)",
       "Bash(pdftotext:*)",
-      "Bash(make qc:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(coqdoc:*)",
+      "Bash(make:*)"
     ],
     "deny": [],
     "ask": []
